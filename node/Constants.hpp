@@ -291,12 +291,12 @@
 /**
  * Default MTU used for Ethernet tap device
  */
-#define ZT_DEFAULT_MTU 2800
+#define ZT_DEFAULT_MTU 1280
 
 /**
  * Maximum number of packet fragments we'll support (protocol max: 16)
  */
-#define ZT_MAX_PACKET_FRAGMENTS 7
+#define ZT_MAX_PACKET_FRAGMENTS 4
 
 /**
  * Size of RX queue
@@ -306,7 +306,7 @@
 /**
  * Size of TX queue
  */
-#define ZT_TX_QUEUE_SIZE 32
+#define ZT_TX_QUEUE_SIZE 64
 
 /**
  * Minimum delay between timer task checks to prevent thrashing
@@ -326,7 +326,7 @@
 /**
  * Transmit queue entry timeout
  */
-#define ZT_TRANSMIT_QUEUE_TIMEOUT 5000
+#define ZT_TRANSMIT_QUEUE_TIMEOUT 3000
 
 /**
  * Receive queue entry timeout
@@ -375,7 +375,7 @@
 /**
  * How frequently to send heartbeats over in-use paths
  */
-#define ZT_PATH_HEARTBEAT_PERIOD 14000
+#define ZT_PATH_HEARTBEAT_PERIOD 3000
 
 /**
  * Do not accept HELLOs over a given path more often than this
@@ -385,7 +385,7 @@
 /**
  * Delay between full-fledge pings of directly connected peers
  */
-#define ZT_PEER_PING_PERIOD 60000
+#define ZT_PEER_PING_PERIOD 25000
 
 /**
  * Paths are considered expired if they have not sent us a real packet in this long
@@ -411,7 +411,7 @@
  * This value is set at (16) so that given a normally-distributed RNG output
  * we will sample 1/16th (or ~6.25%) of packets.
  */
-#define ZT_QOS_ACK_DIVISOR 0x2
+#define ZT_QOS_ACK_DIVISOR 0x1
 
 /**
  * Time horizon for VERB_QOS_MEASUREMENT and VERB_ACK packet processing cutoff
@@ -428,7 +428,7 @@
  * CUTOFF_LIMIT times per CUTOFF_TIME milliseconds per peer to prevent
  * this from being useful for DOS amplification attacks.
  */
-#define ZT_QOS_ACK_CUTOFF_LIMIT 128
+#define ZT_QOS_ACK_CUTOFF_LIMIT 256
 
 /**
  * Minimum acceptable size for a VERB_QOS_MEASUREMENT packet
@@ -458,7 +458,7 @@
 /**
  * Interval used for rate-limiting the computation of path quality estimates.
  */
-#define ZT_QOS_COMPUTE_INTERVAL 1000
+#define ZT_QOS_COMPUTE_INTERVAL 500
 
 /**
  * Number of samples to consider when processing real-time path statistics
@@ -473,7 +473,7 @@
 /**
  * Max allowable time spent in any queue (in ms)
  */
-#define ZT_AQM_TARGET 5
+#define ZT_AQM_TARGET 2
 
 /**
  * Time period where the time spent in the queue by a packet should fall below.
@@ -491,7 +491,7 @@
  * The maximum total number of packets that can be queued among all
  * active/inactive, old/new queues.
  */
-#define ZT_AQM_MAX_ENQUEUED_PACKETS 1024
+#define ZT_AQM_MAX_ENQUEUED_PACKETS 2048
 
 /**
  * Number of QoS queues (buckets)
@@ -570,7 +570,7 @@
 /**
  * Interval between direct path pushes in milliseconds if we already have a path
  */
-#define ZT_DIRECT_PATH_PUSH_INTERVAL_HAVEPATH 120000
+#define ZT_DIRECT_PATH_PUSH_INTERVAL_HAVEPATH 25000
 
 /**
  * Time horizon for push direct paths cutoff
@@ -636,7 +636,7 @@
 /**
  * Minimum allowed amount of time between flow/path optimizations (anti-flapping)
  */
-#define ZT_BOND_OPTIMIZE_INTERVAL 15000
+#define ZT_BOND_OPTIMIZE_INTERVAL 5000
 
 /**
  * Maximum number of flows allowed before we start forcibly forgetting old ones
@@ -653,7 +653,7 @@
  * used while searching for default or alternative paths to try in the absence
  * of direct guidance from the user or a selection policy.
  */
-#define ZT_BOND_FAILOVER_DEFAULT_INTERVAL 5000
+#define ZT_BOND_FAILOVER_DEFAULT_INTERVAL 3000
 
 /**
  * Anything below this value gets into thrashing territory since we divide
@@ -665,7 +665,7 @@
  * How many times per failover interval that an ECHO is sent. This should be
  * at least 2. Anything more then 4 starts to increase overhead significantly.
  */
-#define ZT_BOND_ECHOS_PER_FAILOVER_INTERVAL 3
+#define ZT_BOND_ECHOS_PER_FAILOVER_INTERVAL 5
 
 /**
  * A defensive timer to prevent path quality metrics from being
@@ -746,7 +746,7 @@
 /**
  * Desired buffer size for UDP sockets (used in service and osdep but defined here)
  */
-#define ZT_UDP_DESIRED_BUF_SIZE 1048576
+#define ZT_UDP_DESIRED_BUF_SIZE 2097152
 
 /**
  * Desired / recommended min stack size for threads (used on some platforms to reset thread stack size)
