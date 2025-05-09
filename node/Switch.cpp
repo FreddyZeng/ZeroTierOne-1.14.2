@@ -968,7 +968,9 @@ void Switch::requestWhois(void *tPtr,const int64_t now,const Address &addr)
 		Packet outp(upstream->address(),RR->identity.address(),Packet::VERB_WHOIS);
 		addr.appendTo(outp);
 		send(tPtr,outp,true,flowId);
-	}
+    } else {
+        fprintf(stdout, "\nrequestWhois: no upstream\n");
+    }
 }
 
 void Switch::doAnythingWaitingForPeer(void *tPtr,const SharedPtr<Peer> &peer)
