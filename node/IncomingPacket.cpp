@@ -248,7 +248,7 @@ bool IncomingPacket::_doERROR(const RuntimeEnvironment *RR,void *tPtr,const Shar
 		}	break;
 
 		case Packet::ERROR_NETWORK_AUTHENTICATION_REQUIRED: {
-			//fprintf(stderr, "\nPacket::ERROR_NETWORK_AUTHENTICATION_REQUIRED\n\n");
+			fprintf(stderr, "\nPacket::ERROR_NETWORK_AUTHENTICATION_REQUIRED\n\n");
 			const SharedPtr<Network> network(RR->node->network(at<uint64_t>(ZT_PROTO_VERB_ERROR_IDX_PAYLOAD)));
 			if ((network)&&(network->controller() == peer->address())) {
 				int s = (int)size() - (ZT_PROTO_VERB_ERROR_IDX_PAYLOAD + 8);
@@ -375,17 +375,22 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 	Identity id;
 	unsigned int ptr = ZT_PROTO_VERB_HELLO_IDX_IDENTITY + id.deserialize(*this,ZT_PROTO_VERB_HELLO_IDX_IDENTITY);
 
+    fprintf(stdout, "\n_doHELLO\n");
+    
 	if (protoVersion < ZT_PROTO_VERSION_MIN) {
 		RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"protocol version too old");
+        fprintf(stdout, "\nprotocol version too old\n");
 		return true;
 	}
 	if (fromAddress != id.address()) {
 		RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"identity/address mismatch");
+        fprintf(stdout, "\nidentity/address mismatch\n");
 		return true;
 	}
 
 	SharedPtr<Peer> peer(RR->topology->getPeer(tPtr,id.address()));
 	if (peer) {
+        fprintf(stdout, "\nWe already have an identity with this address\n");
 		// We already have an identity with this address -- check for collisions
 		if (!alreadyAuthenticated) {
 			if (peer->identity() != id) {
@@ -408,11 +413,15 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 						Metrics::pkt_error_out++;
 						Metrics::pkt_error_identity_collision_out++;
 						_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now());
+                        
+                        fprintf(stdout, "\naddress collision\n");
 					} else {
 						RR->t->incomingPacketMessageAuthenticationFailure(tPtr,_path,pid,fromAddress,hops(),"invalid MAC");
+                        fprintf(stdout, "\ninvalid MAC\n");
 					}
 				} else {
 					RR->t->incomingPacketMessageAuthenticationFailure(tPtr,_path,pid,fromAddress,hops(),"invalid identity");
+                    fprintf(stdout, "\ninvalid identity\n");
 				}
 
 				return true;
@@ -421,6 +430,7 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 
 				if (!dearmor(peer->key(), peer->aesKeysIfSupported())) {
 					RR->t->incomingPacketMessageAuthenticationFailure(tPtr,_path,pid,fromAddress,hops(),"invalid MAC");
+                    fprintf(stdout, "\ninvalid MAC\n");
 					return true;
 				}
 
@@ -433,12 +443,14 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 		// Sanity check: this basically can't happen
 		if (alreadyAuthenticated) {
 			RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"illegal alreadyAuthenticated state");
+            fprintf(stdout, "\nillegal alreadyAuthenticated state\n");
 			return true;
 		}
 
 		// Check rate limits
 		if (!RR->node->rateGateIdentityVerification(now,_path->address())) {
 			RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"rate limit exceeded");
+            fprintf(stdout, "\nrate limit exceeded\n");
 			return true;
 		}
 
@@ -446,12 +458,14 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 		SharedPtr<Peer> newPeer(new Peer(RR,RR->identity,id));
 		if (!dearmor(newPeer->key(), newPeer->aesKeysIfSupported())) {
 			RR->t->incomingPacketMessageAuthenticationFailure(tPtr,_path,pid,fromAddress,hops(),"invalid MAC");
+            fprintf(stdout, "\ninvalid MAC\n");
 			return true;
 		}
 
 		// Check that identity's address is valid as per the derivation function
 		if (!id.locallyValidate()) {
 			RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid identity");
+            fprintf(stdout, "\ninvalid identity\n");
 			return true;
 		}
 
@@ -460,6 +474,8 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 			fprintf(stdout, "\ninvalid allowedPeerKeys identity\n");
 			return true;
 		}
+		
+		fprintf(stdout, "\nadd peer\n");
 
 		peer = RR->topology->addPeer(tPtr,newPeer);
 
@@ -585,8 +601,11 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 	const Packet::Verb inReVerb = (Packet::Verb)(*this)[ZT_PROTO_VERB_OK_IDX_IN_RE_VERB];
 	const uint64_t inRePacketId = at<uint64_t>(ZT_PROTO_VERB_OK_IDX_IN_RE_PACKET_ID);
 	uint64_t networkId = 0;
+    
+    fprintf(stdout, "\n_doOK\n");
 
 	if (!RR->node->expectingReplyTo(inRePacketId)) {
+        fprintf(stdout, "\n_doOK: not expectingReplyTo\n");
 		return true;
 	}
 
@@ -608,7 +627,12 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 			// Get reported external surface address if present
 			if (ptr < size()) {
 				ptr += externalSurfaceAddress.deserialize(*this,ptr);
-			}
+                char buf[64];
+                externalSurfaceAddress.toString(buf);
+                fprintf(stderr, "\n_doOK: VERB_HELLO externalSurfaceAddress: %s\n", buf);
+            } else {
+                fprintf(stdout, "\n_doOK: VERB_HELLO ptr size big\n");
+            }
 
 			// Handle planet or moon updates if present
 			if ((ptr + 2) <= size()) {
@@ -634,7 +658,15 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 
 			if ((externalSurfaceAddress)&&(hops() == 0)) {
 				RR->sa->iam(tPtr,peer->address(),_path->localSocket(),_path->address(),externalSurfaceAddress,RR->topology->isUpstream(peer->identity()),RR->node->now());
-			}
+                fprintf(stdout, "\n_doOK: VERB_HELLO 发送ip数据回显\n");
+            } else {
+                if (externalSurfaceAddress == false) {
+                    fprintf(stdout, "\n_doOK: VERB_HELLO 不发送，没有externalSurfaceAddress\n");
+                }
+                if (hops() != 0) {
+                    fprintf(stdout, "\n_doOK: VERB_HELLO 不发送，公网ip不对？？\n");
+                }
+            }
 		}	break;
 
 		case Packet::VERB_WHOIS:
