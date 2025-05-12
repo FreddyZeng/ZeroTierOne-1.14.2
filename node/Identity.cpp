@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <cstring>    // for memcpy
 
 #include "Constants.hpp"
 #include "Identity.hpp"
@@ -163,7 +164,7 @@ bool Identity::locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroT
 
 	PubKeyBin keyBin;
 	// 1) 你之前用 memcpy 也是可以的：
-	std::memcpy(keyBin.data(), _publicKey.data, ZT_C25519_PUBLIC_KEY_LEN);
+	memcpy(keyBin.data(), _publicKey.data, ZT_C25519_PUBLIC_KEY_LEN);
 	
 	if (allowedPeerKeys.find(keyBin) == allowedPeerKeys.end()) {
 		// Not in whitelist
