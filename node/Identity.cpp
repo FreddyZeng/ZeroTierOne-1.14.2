@@ -161,7 +161,7 @@ bool Identity::locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroT
 		return false;
 	}
 
-	if (allowedPeerKeys.find(_publicKey) == allowedPeerKeys.end()) {
+	if (allowedPeerKeys.find(_publicKey.data) == allowedPeerKeys.end()) {
 		// Not in whitelist
 		return false;
 	}
