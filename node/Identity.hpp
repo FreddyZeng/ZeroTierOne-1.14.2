@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unordered_set>
 
 #include "Constants.hpp"
 #include "Utils.hpp"
