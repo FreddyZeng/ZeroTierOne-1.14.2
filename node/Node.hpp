@@ -81,7 +81,7 @@ static bool ZeroTier_ParseHexPubKey(const std::string &hex, ZeroTier::PubKeyBin 
     std::vector<uint8_t> buf;
     if (!ZeroTier_HexStringToBytes(hex, buf)) return false;
     // 直接 memcpy 最清晰
-    std::memcpy(pubKeyBin[0], buf.data(), ZT_C25519_PUBLIC_KEY_LEN);
+    std::memcpy(pubKeyBin.data(), buf.data(), ZT_C25519_PUBLIC_KEY_LEN);
     return true;
 }
 

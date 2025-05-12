@@ -107,7 +107,7 @@ public:
 	 */
 	bool locallyValidate() const;
 
-	bool locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroTier::PubKeyBin: ZeroTier::PubKeyHash>& allowedPeerKeys) const;
+	bool locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroTier::PubKeyBin, ZeroTier::PubKeyHash>& allowedPeerKeys) const;
 
 
 	/**
