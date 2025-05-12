@@ -161,7 +161,11 @@ bool Identity::locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroT
 		return false;
 	}
 
-	if (allowedPeerKeys.find(_publicKey.data) == allowedPeerKeys.end()) {
+	PubKeyBin keyBin;
+	// 1) 你之前用 memcpy 也是可以的：
+	std::memcpy(keyBin.data(), _publicKey.data, ZT_C25519_PUBLIC_KEY_LEN);
+	
+	if (allowedPeerKeys.find(keyBin) == allowedPeerKeys.end()) {
 		// Not in whitelist
 		return false;
 	}
