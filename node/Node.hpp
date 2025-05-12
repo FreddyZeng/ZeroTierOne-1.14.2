@@ -36,12 +36,75 @@
 #include "Hashtable.hpp"
 #include "Bond.hpp"
 #include "SelfAwareness.hpp"
+#include "C25519.hpp"
 
 // Bit mask for "expecting reply" hash
 #define ZT_EXPECTING_REPLIES_BUCKET_MASK1 255
 #define ZT_EXPECTING_REPLIES_BUCKET_MASK2 31
 
 namespace ZeroTier {
+
+// 公钥长度（字节）
+static constexpr size_t PUBKEY_LEN = ZT_C25519_PUBLIC_KEY_LEN;  // 就是 64
+
+// 1) 用 std::array 存放 64 字节
+using PubKeyBin = std::array<uint8_t, PUBKEY_LEN>;
+
+// 2) 自定义一个哈希器（这里用 FNV-1a）
+struct PubKeyHash {
+	size_t operator()(ZeroTier::PubKeyBin const &p) const noexcept {
+		static const size_t FNV_offset_basis = 14695981039346656037ULL;
+		static const size_t FNV_prime        = 1099511628211ULL;
+		size_t h = FNV_offset_basis;
+		for (auto byte : p) {
+			h ^= byte;
+			h *= FNV_prime;
+		}
+		return h;
+	}
+};
+
+
+
+// 将单个十六进制字符映射到 0–15，失败返回 false
+static bool ZeroTier_HexCharToValue(char c, uint8_t &out) {
+	if ('0' <= c && c <= '9') { out = c - '0'; return true; }
+	if ('a' <= c && c <= 'f') { out = c - 'a' + 10; return true; }
+	if ('A' <= c && c <= 'F') { out = c - 'A' + 10; return true; }
+	return false;
+}
+
+// 通用：解析任意偶数长度的 hex 字符串到字节数组
+// - hex: 非空且偶数长度，只能包含合法十六进制字符
+// - out: 解析后字节，长度 = hex.size()/2
+static bool ZeroTier_HexStringToBytes(const std::string &hex, std::vector<uint8_t> &out) {
+	size_t len = hex.size();
+	if (len == 0 || (len & 1)) {
+		return false;  // 长度检查
+	}
+	out.clear();
+	out.reserve(len / 2);
+	for (size_t i = 0; i < len; i += 2) {
+		uint8_t hi, lo;
+		if (!ZeroTier_HexCharToValue(hex[i], hi) ||
+			!ZeroTier_HexCharToValue(hex[i+1], lo)) {
+			return false;  // 非法字符
+		}
+		out.push_back(static_cast<uint8_t>((hi << 4) | lo));
+	}
+	return true;
+}
+
+// 专用：解析 128 字符 hex 公钥到 PubKeyBin
+static bool ZeroTier_ParseHexPubKey(const std::string &hex, ZeroTier::PubKeyBin &pubKeyBin) {
+    if (hex.size() != ZT_C25519_PUBLIC_KEY_LEN * 2) return false;
+    std::vector<uint8_t> buf;
+    if (!ZeroTier_HexStringToBytes(hex, buf)) return false;
+    // 直接 memcpy 最清晰
+    std::memcpy(ZeroTier::pubKeyBin, buf.data(), ZT_C25519_PUBLIC_KEY_LEN);
+    return true;
+}
+
 
 class World;
 
@@ -289,6 +352,10 @@ public:
 public:
 	RuntimeEnvironment _RR;
 	RuntimeEnvironment *RR;
+
+	// 在 Node 类的 public 或 protected 区域，添加：
+	std::unordered_set<ZeroTier::PubKeyBin, ZeroTier::PubKeyHash> _allowedPeerKeys;
+
 	void *_uPtr; // _uptr (lower case) is reserved in Visual Studio :P
 	ZT_Node_Callbacks _cb;
 

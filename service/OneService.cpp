@@ -2572,6 +2572,32 @@ public:
 			for (json::iterator peerItr = peerSpecificBonds.begin(); peerItr != peerSpecificBonds.end();++peerItr) {
 				_node->bondController()->assignBondingPolicyToPeer(std::stoull(peerItr.key(),0,16), peerItr.value());
 			}
+
+			if (settings.contains("localPublicKeyStrings")
+				&& settings["localPublicKeyStrings"].is_array())
+			{
+				auto &localPublicKeyStrings = settings["localPublicKeyStrings"];
+				fprintf(stderr, "\nlocalPublicKeyStrings JSON = %s\n",
+						localPublicKeyStrings.dump(2).c_str());
+
+				for (auto &elem : localPublicKeyStrings) {
+					if (!elem.is_string()) {
+						fprintf(stderr, "\n✖ whitelist entry is not a string\n");
+						continue;
+					}
+					std::string hex = elem.get<std::string>();
+					ZeroTier::PubKeyBin key;
+					if (ZeroTier_ParseHexPubKey(hex, key)) {
+						_node->_allowedPeerKeys.insert(key);
+						fprintf(stderr, "\n✔ loaded whitelist key: %s\n", hex.c_str());
+					} else {
+						fprintf(stderr, "\n✖ invalid public key hex: %s\n", hex.c_str());
+					}
+				}
+			} else {
+				fprintf(stderr, "\n✖ no valid localPublicKeyStrings array in settings\n");
+			}
+
 			// Check settings
 			if (defaultBondingPolicyStr.length() && !defaultBondingPolicy && !_node->bondController()->inUse()) {
 				fprintf(stderr, "error: unknown policy (%s) specified by defaultBondingPolicy, bond disabled.\n", defaultBondingPolicyStr.c_str());

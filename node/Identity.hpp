@@ -106,6 +106,9 @@ public:
 	 */
 	bool locallyValidate() const;
 
+	bool locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroTier::PubKeyBin: ZeroTier::PubKeyHash>& allowedPeerKeys) const;
+
+
 	/**
 	 * @return True if this identity contains a private key
 	 */
@@ -288,6 +291,9 @@ public:
 	 * @return True if deserialization appears successful
 	 */
 	bool fromString(const char *str);
+
+
+    bool customDigestCheck(const unsigned char digest[64]);
 
 	/**
 	 * @return C25519 public key

@@ -16,8 +16,8 @@
 
 #include "Utils.hpp"
 
-namespace ZeroTier {
 
+namespace ZeroTier {
 #define ZT_C25519_PUBLIC_KEY_LEN 64
 #define ZT_C25519_PRIVATE_KEY_LEN 64
 #define ZT_C25519_SIGNATURE_LEN 96

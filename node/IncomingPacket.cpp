@@ -455,6 +455,12 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 			return true;
 		}
 
+		if (!id.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
+			RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid allowedPeerKeys identity");
+			fprintf(stdout, "\ninvalid allowedPeerKeys identity\n");
+			return true;
+		}
+
 		peer = RR->topology->addPeer(tPtr,newPeer);
 
 		// Continue at // VALID

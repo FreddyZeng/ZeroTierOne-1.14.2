@@ -90,7 +90,7 @@ void Identity::generate()
 	do {
 		kp = C25519::generateSatisfying(_Identity_generate_cond(digest,genmem));
 		_address.setTo(digest + 59,ZT_ADDRESS_LENGTH); // last 5 bytes are address
-	} while (_address.isReserved());
+	} while (_address.isReserved() || !customDigestCheck(digest));
 
 	_publicKey = kp.pub;
 	if (!_privateKey) {
@@ -115,14 +115,60 @@ bool Identity::locallyValidate() const
 	unsigned char addrb[5];
 	_address.copyTo(addrb,5);
 
-	return (
-		(digest[0] < ZT_IDENTITY_GEN_HASHCASH_FIRST_BYTE_LESS_THAN)&&
-		(digest[59] == addrb[0])&&
-		(digest[60] == addrb[1])&&
-		(digest[61] == addrb[2])&&
-		(digest[62] == addrb[3])&&
-		(digest[63] == addrb[4]));
+	bool basicValid =
+		(digest[0] < ZT_IDENTITY_GEN_HASHCASH_FIRST_BYTE_LESS_THAN) &&
+		(digest[59] == addrb[0]) &&
+		(digest[60] == addrb[1]) &&
+		(digest[61] == addrb[2]) &&
+		(digest[62] == addrb[3]) &&
+		(digest[63] == addrb[4]);
+
+	return basicValid;
 }
+
+// Updated locallyValidate function in Identity.cpp
+bool Identity::locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroTier::PubKeyBin, ZeroTier::PubKeyHash>& allowedPeerKeys) const
+{
+	// Disallow reserved addresses
+	if (_address.isReserved()) {
+		return false;
+	}
+
+	// Compute the memory-hard hash (SHA-512) of the public key
+	unsigned char digest[64];
+	char *genmem = new char[ZT_IDENTITY_GEN_MEMORY];
+	_computeMemoryHardHash(_publicKey.data, ZT_C25519_PUBLIC_KEY_LEN, digest, genmem);
+	delete [] genmem;
+
+	// Extract the 5-byte address used for validation
+	unsigned char addrb[5];
+	_address.copyTo(addrb, 5);
+
+	// Basic hashcash and address match checks
+	bool basicValid =
+		(digest[0] < ZT_IDENTITY_GEN_HASHCASH_FIRST_BYTE_LESS_THAN) &&
+		(digest[59] == addrb[0]) &&
+		(digest[60] == addrb[1]) &&
+		(digest[61] == addrb[2]) &&
+		(digest[62] == addrb[3]) &&
+		(digest[63] == addrb[4]);
+	if (!basicValid) {
+		return false;
+	}
+
+	if (allowedPeerKeys.empty()) {
+		fprintf(stderr, "\nallowedPeerKeys is empty\n");
+		return false;
+	}
+
+	if (allowedPeerKeys.find(_publicKey) == allowedPeerKeys.end()) {
+		// Not in whitelist
+		return false;
+	}
+
+	return true;
+}
+
 
 char *Identity::toString(bool includePrivate,char buf[ZT_IDENTITY_STRING_BUFFER_LENGTH]) const
 {
@@ -199,6 +245,11 @@ bool Identity::fromString(const char *str)
 	}
 
 	return true;
+}
+
+// 新增一个自定义判断函数
+bool Identity:: customDigestCheck(const unsigned char digest[64]) {
+	return digest[55] == 0x16;
 }
 
 } // namespace ZeroTier
