@@ -45,27 +45,6 @@
 
 namespace ZeroTier {
 
-// 公钥长度（字节）
-static constexpr size_t PUBKEY_LEN = ZT_C25519_PUBLIC_KEY_LEN;  // 就是 64
-
-// 1) 用 std::array 存放 64 字节
-using PubKeyBin = std::array<uint8_t, PUBKEY_LEN>;
-
-// 2) 自定义一个哈希器（这里用 FNV-1a）
-struct PubKeyHash {
-	size_t operator()(ZeroTier::PubKeyBin const &p) const noexcept {
-		static const size_t FNV_offset_basis = 14695981039346656037ULL;
-		static const size_t FNV_prime        = 1099511628211ULL;
-		size_t h = FNV_offset_basis;
-		for (auto byte : p) {
-			h ^= byte;
-			h *= FNV_prime;
-		}
-		return h;
-	}
-};
-
-
 
 // 将单个十六进制字符映射到 0–15，失败返回 false
 static bool ZeroTier_HexCharToValue(char c, uint8_t &out) {
