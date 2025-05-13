@@ -65,6 +65,7 @@ bool IncomingPacket::tryDecode(const RuntimeEnvironment *RR,void *tPtr,int32_t f
 			return _doHELLO(RR,tPtr,false);
 		}
 
+        char addressBuf[11];
 		const SharedPtr<Peer> peer(RR->topology->getPeer(tPtr,sourceAddress));
 		if (peer) {
 			if (!_authenticated) {
@@ -74,6 +75,13 @@ bool IncomingPacket::tryDecode(const RuntimeEnvironment *RR,void *tPtr,int32_t f
 					return true;
 				}
 			}
+
+            if (!peer->identity().locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
+                RR->t->incomingPacketMessageAuthenticationFailure(tPtr,_path,packetId(),sourceAddress,hops(),"invalid allowedPeerKeys identity");
+                peer->recordIncomingInvalidPacket(_path);
+                fprintf(stdout, "\ntryDecode invalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
+                return true;
+            }
 
 			if (!uncompress()) {
 				RR->t->incomingPacketInvalid(tPtr,_path,packetId(),sourceAddress,hops(),Packet::VERB_NOP,"LZ4 decompression failed");
@@ -391,6 +399,12 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 	char addressBuf[11];
 	SharedPtr<Peer> peer(RR->topology->getPeer(tPtr,id.address()));
 	if (peer) {
+        
+        if (!id.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
+            RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid allowedPeerKeys identity");
+            fprintf(stdout, "\nWe already have peer, but invalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
+            return true;
+        }
 		
         fprintf(stdout, "\nWe already have an identity with this address: %s\n", id.address().toString(addressBuf));
 		// We already have an identity with this address -- check for collisions
@@ -473,7 +487,7 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 
 		if (!id.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
 			RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid allowedPeerKeys identity");
-			fprintf(stdout, "\ninvalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
+			fprintf(stdout, "\n _doHELLO invalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
 			return true;
 		}
 		
