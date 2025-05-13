@@ -624,6 +624,13 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 			if (vProto < ZT_PROTO_VERSION_MIN) {
 				return true;
 			}
+			
+			char addressBuf[11];
+			
+			if (!peer->identity().locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
+				fprintf(stdout, "\n_doOK: VERB_HELLO invalid allowedPeerKeys identity %s\n", peer->address().toString(addressBuf));
+				break;
+			}
 
 			InetAddress externalSurfaceAddress;
 			unsigned int ptr = ZT_PROTO_VERB_HELLO__OK__IDX_REVISION + 2;
