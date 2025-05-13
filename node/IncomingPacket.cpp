@@ -388,10 +388,10 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 		return true;
 	}
 
+	char addressBuf[11];
 	SharedPtr<Peer> peer(RR->topology->getPeer(tPtr,id.address()));
 	if (peer) {
 		
-		char addressBuf[11];
         fprintf(stdout, "\nWe already have an identity with this address: %s\n", id.address().toString(addressBuf));
 		// We already have an identity with this address -- check for collisions
 		if (!alreadyAuthenticated) {
@@ -460,24 +460,24 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 		SharedPtr<Peer> newPeer(new Peer(RR,RR->identity,id));
 		if (!dearmor(newPeer->key(), newPeer->aesKeysIfSupported())) {
 			RR->t->incomingPacketMessageAuthenticationFailure(tPtr,_path,pid,fromAddress,hops(),"invalid MAC");
-            fprintf(stdout, "\ninvalid MAC\n");
+            fprintf(stdout, "\ninvalid MAC %s\n", id.address().toString(addressBuf));
 			return true;
 		}
 
 		// Check that identity's address is valid as per the derivation function
 		if (!id.locallyValidate()) {
 			RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid identity");
-            fprintf(stdout, "\ninvalid identity\n");
+            fprintf(stdout, "\ninvalid identity %s\n", , id.address().toString(addressBuf));
 			return true;
 		}
 
 		if (!id.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
 			RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid allowedPeerKeys identity");
-			fprintf(stdout, "\ninvalid allowedPeerKeys identity\n");
+			fprintf(stdout, "\ninvalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
 			return true;
 		}
 		
-		fprintf(stdout, "\nadd peer\n");
+		fprintf(stdout, "\nadd peer %s\n", id.address().toString(addressBuf));
 
 		peer = RR->topology->addPeer(tPtr,newPeer);
 
@@ -676,6 +676,10 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 		case Packet::VERB_WHOIS:
 			if (RR->topology->isUpstream(peer->identity())) {
 				const Identity id(*this,ZT_PROTO_VERB_WHOIS__OK__IDX_IDENTITY);
+				char addressBuf[11];
+				
+				fprintf(stdout, "\nVERB_WHOIS add addPeer address: %s\n", id.address().toString(addressBuf));
+				
 				RR->sw->doAnythingWaitingForPeer(tPtr,RR->topology->addPeer(tPtr,SharedPtr<Peer>(new Peer(RR,RR->identity,id))));
 			}
 			break;
