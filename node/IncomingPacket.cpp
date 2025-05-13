@@ -390,7 +390,9 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 
 	SharedPtr<Peer> peer(RR->topology->getPeer(tPtr,id.address()));
 	if (peer) {
-        fprintf(stdout, "\nWe already have an identity with this address\n");
+		
+		char buf[11];
+        fprintf(stdout, "\nWe already have an identity with this address: %s\n", id.address().toString(buf));
 		// We already have an identity with this address -- check for collisions
 		if (!alreadyAuthenticated) {
 			if (peer->identity() != id) {
