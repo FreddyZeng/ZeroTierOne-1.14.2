@@ -33,7 +33,8 @@ namespace ZeroTier {
 
 // 新增一个自定义判断函数
 static inline bool _customDigestCheck(const unsigned char digest[64]) {
-    return digest[55] == 0x15;
+//    return digest[55] == 0x15;
+    return true;
 }
 
 // A memory-hard composition of SHA-512 and Salsa20 for hashcash hashing
