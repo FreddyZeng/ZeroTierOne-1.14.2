@@ -399,9 +399,16 @@ void Topology::_memoizeUpstreams(void *tPtr)
 			_upstreamAddresses.push_back(id.address());
 			SharedPtr<Peer> &hp = _peers[id.address()];
 			if (!hp) {
-				char buf[11];
-				fprintf(stdout, "\nadd peer memoizeUpstreams: %s\n", i->identity.address().toString(buf));
+				char addressBuf[11];
+
+				if (!i->identity.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
+					fprintf(stdout, "\n add peer memoizeUpstreams invalid allowedPeerKeys identity %s\n", i->identity.address().toString(addressBuf));
+					break;
+				}
+
 				hp = new Peer(RR,RR->identity,id);
+
+				fprintf(stdout, "\nadd peer memoizeUpstreams: %s\n", i->identity.address().toString(addressBuf));
 			}
 		}
 	}
@@ -414,9 +421,16 @@ void Topology::_memoizeUpstreams(void *tPtr)
 				_upstreamAddresses.push_back(i->identity.address());
 				SharedPtr<Peer> &hp = _peers[i->identity.address()];
 				if (!hp) {
-					char buf[11];
-					fprintf(stdout, "\nadd peer memoizeUpstreams: %s\n", i->identity.address().toString(buf));
+					char addressBuf[11];
+
+					if (!i->identity.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
+						fprintf(stdout, "\n add peer memoizeUpstreams invalid allowedPeerKeys identity %s\n", i->identity.address().toString(addressBuf));
+						break;
+					}
+
 					hp = new Peer(RR,RR->identity,i->identity);
+
+					fprintf(stdout, "\nadd peer memoizeUpstreams: %s\n", i->identity.address().toString(addressBuf));
 				}
 			}
 		}

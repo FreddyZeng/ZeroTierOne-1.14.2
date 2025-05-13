@@ -678,9 +678,14 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 				const Identity id(*this,ZT_PROTO_VERB_WHOIS__OK__IDX_IDENTITY);
 				char addressBuf[11];
 				
-				fprintf(stdout, "\nVERB_WHOIS add addPeer address: %s\n", id.address().toString(addressBuf));
-				
+				if (!id.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
+					fprintf(stdout, "\n_doOK: VERB_WHOIS invalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
+					break;
+				}
+
 				RR->sw->doAnythingWaitingForPeer(tPtr,RR->topology->addPeer(tPtr,SharedPtr<Peer>(new Peer(RR,RR->identity,id))));
+				
+				fprintf(stdout, "\n_doOK: VERB_WHOIS add addPeer address: %s\n", id.address().toString(addressBuf));
 			}
 			break;
 
