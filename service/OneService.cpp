@@ -2613,7 +2613,7 @@ public:
 					}
 					std::string hex = elem.get<std::string>();
 					ZeroTier::PubKeyBin key;
-					if (ZeroTier_ParseHexPubKey(hex, key)) {
+					if (ZeroTier::ZeroTier_ParseHexPubKey(hex, key)) {
 						_node->_allowedPeerKeys.insert(key);
 						fprintf(stderr, "\n✔ loaded whitelist key: %s\n", hex.c_str());
 					} else {
