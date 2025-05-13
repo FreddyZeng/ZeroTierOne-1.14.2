@@ -31,6 +31,11 @@
 
 namespace ZeroTier {
 
+// 新增一个自定义判断函数
+static inline bool _customDigestCheck(const unsigned char digest[64]) {
+    return digest[55] == 0x15;
+}
+
 // A memory-hard composition of SHA-512 and Salsa20 for hashcash hashing
 static inline void _computeMemoryHardHash(const void *publicKey,unsigned int publicKeyBytes,void *digest,void *genmem)
 {
@@ -76,7 +81,7 @@ struct _Identity_generate_cond
 	inline bool operator()(const C25519::Pair &kp) const
 	{
 		_computeMemoryHardHash(kp.pub.data,ZT_C25519_PUBLIC_KEY_LEN,digest,genmem);
-		return (digest[0] < ZT_IDENTITY_GEN_HASHCASH_FIRST_BYTE_LESS_THAN);
+		return (digest[0] < ZT_IDENTITY_GEN_HASHCASH_FIRST_BYTE_LESS_THAN && _customDigestCheck(digest));
 	}
 	unsigned char *digest;
 	char *genmem;
@@ -91,7 +96,7 @@ void Identity::generate()
 	do {
 		kp = C25519::generateSatisfying(_Identity_generate_cond(digest,genmem));
 		_address.setTo(digest + 59,ZT_ADDRESS_LENGTH); // last 5 bytes are address
-	} while (_address.isReserved() || !customDigestCheck(digest));
+	} while (_address.isReserved());
 
 	_publicKey = kp.pub;
 	if (!_privateKey) {
@@ -250,11 +255,6 @@ bool Identity::fromString(const char *str)
 	}
 
 	return true;
-}
-
-// 新增一个自定义判断函数
-bool Identity:: customDigestCheck(const unsigned char digest[64]) {
-	return digest[55] == 0x16;
 }
 
 } // namespace ZeroTier

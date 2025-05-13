@@ -294,8 +294,6 @@ public:
 	bool fromString(const char *str);
 
 
-    bool customDigestCheck(const unsigned char digest[64]);
-
 	/**
 	 * @return C25519 public key
 	 */
