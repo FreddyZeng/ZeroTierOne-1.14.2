@@ -540,6 +540,19 @@ public:
 				return SharedPtr<Peer>();
 			}
 
+			char buf[11];
+			char *addressString = id.address().toString(buf);
+
+			fprintf(stdout, "\nwill add peer from cache: %s\n", addressString);
+
+			if (!id.locallyValidateWithAllowedPeerKeys(renv->node->_allowedPeerKeys)) {
+
+				fprintf(stdout, "\nnot add peer from cache: %s\n", addressString);
+				return SharedPtr<Peer>();
+			}
+
+			fprintf(stdout, "\ndid add peer from cache: %s\n", addressString);
+
 			SharedPtr<Peer> p(new Peer(renv,renv->identity,id));
 
 			p->_vProto = b.template at<uint16_t>(ptr);

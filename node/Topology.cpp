@@ -11,6 +11,7 @@
  */
 /****/
 
+#include <cstdio>
 #include "Constants.hpp"
 #include "Topology.hpp"
 #include "RuntimeEnvironment.hpp"
@@ -398,6 +399,8 @@ void Topology::_memoizeUpstreams(void *tPtr)
 			_upstreamAddresses.push_back(id.address());
 			SharedPtr<Peer> &hp = _peers[id.address()];
 			if (!hp) {
+				char buf[11];
+				fprintf(stdout, "\nadd peer memoizeUpstreams: %s\n", i->identity.address().toString(buf));
 				hp = new Peer(RR,RR->identity,id);
 			}
 		}
@@ -411,6 +414,8 @@ void Topology::_memoizeUpstreams(void *tPtr)
 				_upstreamAddresses.push_back(i->identity.address());
 				SharedPtr<Peer> &hp = _peers[i->identity.address()];
 				if (!hp) {
+					char buf[11];
+					fprintf(stdout, "\nadd peer memoizeUpstreams: %s\n", i->identity.address().toString(buf));
 					hp = new Peer(RR,RR->identity,i->identity);
 				}
 			}
