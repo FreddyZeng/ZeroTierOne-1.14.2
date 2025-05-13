@@ -467,7 +467,7 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 		// Check that identity's address is valid as per the derivation function
 		if (!id.locallyValidate()) {
 			RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid identity");
-            fprintf(stdout, "\ninvalid identity %s\n", , id.address().toString(addressBuf));
+            fprintf(stdout, "\ninvalid identity %s\n", id.address().toString(addressBuf));
 			return true;
 		}
 
