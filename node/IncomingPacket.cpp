@@ -391,8 +391,8 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 	SharedPtr<Peer> peer(RR->topology->getPeer(tPtr,id.address()));
 	if (peer) {
 		
-		char buf[11];
-        fprintf(stdout, "\nWe already have an identity with this address: %s\n", id.address().toString(buf));
+		char addressBuf[11];
+        fprintf(stdout, "\nWe already have an identity with this address: %s\n", id.address().toString(addressBuf));
 		// We already have an identity with this address -- check for collisions
 		if (!alreadyAuthenticated) {
 			if (peer->identity() != id) {
@@ -603,11 +603,13 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 	const Packet::Verb inReVerb = (Packet::Verb)(*this)[ZT_PROTO_VERB_OK_IDX_IN_RE_VERB];
 	const uint64_t inRePacketId = at<uint64_t>(ZT_PROTO_VERB_OK_IDX_IN_RE_PACKET_ID);
 	uint64_t networkId = 0;
+	
+	char addressBuf[11];
     
-    fprintf(stdout, "\n_doOK\n");
+    fprintf(stdout, "\n_doOK: address: %s\n", peer->address().toString(addressBuf));
 
 	if (!RR->node->expectingReplyTo(inRePacketId)) {
-        fprintf(stdout, "\n_doOK: not expectingReplyTo\n");
+        fprintf(stdout, "\n_doOK: not expectingReplyTo  address: %s\n", peer->address().toString(addressBuf));
 		return true;
 	}
 
@@ -631,9 +633,9 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 				ptr += externalSurfaceAddress.deserialize(*this,ptr);
                 char buf[64];
                 externalSurfaceAddress.toString(buf);
-                fprintf(stderr, "\n_doOK: VERB_HELLO externalSurfaceAddress: %s\n", buf);
+                fprintf(stderr, "\n_doOK: VERB_HELLO externalSurfaceAddress: %s  address: %s\n", buf, peer->address().toString(addressBuf));
             } else {
-                fprintf(stdout, "\n_doOK: VERB_HELLO ptr size big\n");
+                fprintf(stdout, "\n_doOK: VERB_HELLO ptr size big  address: %s\n", peer->address().toString(addressBuf));
             }
 
 			// Handle planet or moon updates if present
@@ -660,13 +662,13 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 
 			if ((externalSurfaceAddress)&&(hops() == 0)) {
 				RR->sa->iam(tPtr,peer->address(),_path->localSocket(),_path->address(),externalSurfaceAddress,RR->topology->isUpstream(peer->identity()),RR->node->now());
-                fprintf(stdout, "\n_doOK: VERB_HELLO 发送ip数据回显\n");
+                fprintf(stdout, "\n_doOK: VERB_HELLO 发送ip数据回显  address: %s\n", peer->address().toString(addressBuf));
             } else {
                 if (externalSurfaceAddress == false) {
-                    fprintf(stdout, "\n_doOK: VERB_HELLO 不发送，没有externalSurfaceAddress\n");
+                    fprintf(stdout, "\n_doOK: VERB_HELLO 不发送，没有externalSurfaceAddress  address: %s\n", peer->address().toString(addressBuf));
                 }
                 if (hops() != 0) {
-                    fprintf(stdout, "\n_doOK: VERB_HELLO 不发送，公网ip不对？？\n");
+                    fprintf(stdout, "\n_doOK: VERB_HELLO 不发送，公网ip不对？？  address: %s\n", peer->address().toString(addressBuf));
                 }
             }
 		}	break;
