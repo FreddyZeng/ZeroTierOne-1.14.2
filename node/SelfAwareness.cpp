@@ -53,7 +53,7 @@ private:
 
 SelfAwareness::SelfAwareness(const RuntimeEnvironment *renv) :
 	RR(renv),
-	_phy(256)
+	_phy(1024)
 {
 }
 
