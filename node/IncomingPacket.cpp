@@ -629,7 +629,7 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 			
 			if (!peer->identity().locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
 				fprintf(stdout, "\n_doOK: VERB_HELLO invalid allowedPeerKeys identity %s\n", peer->address().toString(addressBuf));
-				break;
+				return true;
 			}
 
 			InetAddress externalSurfaceAddress;
@@ -687,7 +687,7 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 				
 				if (!id.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys)) {
 					fprintf(stdout, "\n_doOK: VERB_WHOIS invalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
-					break;
+					return;
 				}
 
 				RR->sw->doAnythingWaitingForPeer(tPtr,RR->topology->addPeer(tPtr,SharedPtr<Peer>(new Peer(RR,RR->identity,id))));
