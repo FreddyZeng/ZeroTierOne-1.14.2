@@ -2623,6 +2623,8 @@ public:
 			} else {
 				fprintf(stderr, "\n✖ no valid localPublicKeyStrings array in settings\n");
 			}
+			int enableAllowedPeerKeys = settings.value("enableAllowedPeerKeys", 0);
+			_node->_enableAllowedPeerKeys = (enableAllowedPeerKeys != 0);
 
 			// Check settings
 			if (defaultBondingPolicyStr.length() && !defaultBondingPolicy && !_node->bondController()->inUse()) {

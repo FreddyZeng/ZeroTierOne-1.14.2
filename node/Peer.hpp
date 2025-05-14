@@ -545,7 +545,7 @@ public:
 
 			fprintf(stdout, "\nwill add peer from cache: %s\n", addressString);
 
-			if (!id.locallyValidateWithAllowedPeerKeys(renv->node->_allowedPeerKeys)) {
+			if (!id.locallyValidateWithAllowedPeerKeys(renv->node->_allowedPeerKeys, renv->node->_enableAllowedPeerKeys)) {
 
 				fprintf(stdout, "\nnot add peer from cache: %s\n", addressString);
 				return SharedPtr<Peer>();

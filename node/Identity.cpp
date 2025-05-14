@@ -134,7 +134,7 @@ bool Identity::locallyValidate() const
 }
 
 // Updated locallyValidate function in Identity.cpp
-bool Identity::locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroTier::PubKeyBin, ZeroTier::PubKeyHash>& allowedPeerKeys) const
+bool Identity::locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroTier::PubKeyBin, ZeroTier::PubKeyHash>& allowedPeerKeys, bool enableAllowedPeerKeys) const
 {
 	// Disallow reserved addresses
 	if (_address.isReserved()) {
@@ -159,13 +159,15 @@ bool Identity::locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroT
 		(digest[61] == addrb[2]) &&
 		(digest[62] == addrb[3]) &&
 		(digest[63] == addrb[4]);
-	if (!basicValid) {
-		return false;
+
+	if (!enableAllowedPeerKeys) {
+		return basicValid;
 	}
+
 
 	if (allowedPeerKeys.empty()) {
 		fprintf(stderr, "\nallowedPeerKeys is empty\n");
-		return basicValid;
+		return false;
 	}
 
 	PubKeyBin keyBin;
