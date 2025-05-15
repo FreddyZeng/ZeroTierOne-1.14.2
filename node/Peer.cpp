@@ -63,18 +63,15 @@ Peer::Peer(const RuntimeEnvironment *renv,const Identity &myIdentity,const Ident
 #endif
 {
     if (RR->node->_enableAllowedPeerKeys) {
-        if (RR->node->_planetPubKeyBinKeys) {
-
-            PubKeyBin keyBin;
-            // 1) 你之前用 memcpy 也是可以的：
-            peerIdentity.
-            memcpy(keyBin.data(), peerIdentity->publicKey().data, ZT_C25519_PUBLIC_KEY_LEN);
-            
-            if (RR->node->_planetPubKeyBinKeys.find(keyBin) == RR->node->_planetPubKeyBinKeys.end()) {
-                _isPlanetPublicKey = true;
-            } else {
-                _isPlanetPublicKey = false;
-            }
+        PubKeyBin keyBin;
+        // 1) 你之前用 memcpy 也是可以的：
+        peerIdentity.
+        memcpy(keyBin.data(), peerIdentity->publicKey().data, ZT_C25519_PUBLIC_KEY_LEN);
+        
+        if (RR->node->_planetPubKeyBinKeys.find(keyBin) == RR->node->_planetPubKeyBinKeys.end()) {
+            _isPlanetPublicKey = true;
+        } else {
+            _isPlanetPublicKey = false;
         }
     }
 
