@@ -63,20 +63,30 @@ Peer::Peer(const RuntimeEnvironment *renv,const Identity &myIdentity,const Ident
 #endif
 {
     if (RR->node->_enableAllowedPeerKeys) {
+        char addressBuf[11];
+        
         PubKeyBin keyBin;
         // 1) 你之前用 memcpy 也是可以的：
         memcpy(keyBin.data(), peerIdentity.publicKey().data, ZT_C25519_PUBLIC_KEY_LEN);
         
         if (RR->node->_planetPubKeyBinKeys.find(keyBin) == RR->node->_planetPubKeyBinKeys.end()) {
             _isPlanetPublicKey = true;
+            
+            fprintf(stdout, "\n new peer %s\n  _isPlanetPublicKey true", peerIdentity.address().toString(addressBuf));
         } else {
             _isPlanetPublicKey = false;
+            
+            fprintf(stdout, "\n new peer %s\n  _isPlanetPublicKey false", peerIdentity.address().toString(addressBuf));
         }
         
         if (RR->node->_allowedPeerKeys.find(keyBin) == RR->node->_allowedPeerKeys.end()) {
             _isValidPeerClientPublicKey = true;
+            
+            fprintf(stdout, "\n new peer %s\n  _isValidPeerClientPublicKey true", peerIdentity.address().toString(addressBuf));
         } else {
             _isValidPeerClientPublicKey = false;
+            
+            fprintf(stdout, "\n new peer %s\n  _isValidPeerClientPublicKey false", peerIdentity.address().toString(addressBuf));
         }
     }
 
