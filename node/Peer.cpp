@@ -89,11 +89,13 @@ void Peer::updateAllowedPeerKeys()
     char addressBuf[11];
     PubKeyBin keyBin;
     // copy the raw public key bytes
-    std::memcpy(keyBin.data(),
-                _id.publicKey().data,
-                ZT_C25519_PUBLIC_KEY_LEN);
+    std::memcpy(
+                keyBin.data(),
+                _id.publicKey().data,     // C25519::Public::data 是原始 uint8_t[]
+                keyBin.size()             // 自动与 PubKeyBin 保持一致
+                );
     
-    std::string peerPublicBinHexString = ZeroTier::ZeroTier_BytesToHexString(keyBin, ZT_C25519_PUBLIC_KEY_LEN);
+    std::string peerPublicBinHexString = ZeroTier::ZeroTier_BytesToHexString(keyBin.data(), keyBin.size());
     
     std::cout << "打印当前peer的hex:\n" << peerPublicBinHexString << "\n\n";
     
@@ -102,7 +104,7 @@ void Peer::updateAllowedPeerKeys()
     std::cout << "打印所有_planetPubKeyBinKeys, 开始\n";
     
     for (auto const& bin : RR->node->_planetPubKeyBinKeys) {
-        std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data, ZT_C25519_PUBLIC_KEY_LEN);
+        std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data(), bin.size());
         std::cout << hex << "\n";
     }
     
@@ -112,7 +114,7 @@ void Peer::updateAllowedPeerKeys()
     
     // Planet‐key check
     if (RR->node->_planetPubKeyBinKeys.find(keyBin)
-        == RR->node->_planetPubKeyBinKeys.end())
+        != RR->node->_planetPubKeyBinKeys.end())
     {
         _isPlanetPublicKey = true;
         fprintf(stdout,
@@ -131,7 +133,7 @@ void Peer::updateAllowedPeerKeys()
     std::cout << "打印所有_allowedPeerKeys, 开始\n";
     
     for (auto const& bin : RR->node->_allowedPeerKeys) {
-        std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data, ZT_C25519_PUBLIC_KEY_LEN);
+        std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data(), bin.size());
         std::cout << hex << "\n";
     }
     
@@ -140,7 +142,7 @@ void Peer::updateAllowedPeerKeys()
     
     // Client‐key check
     if (RR->node->_allowedPeerKeys.find(keyBin)
-        == RR->node->_allowedPeerKeys.end())
+        != RR->node->_allowedPeerKeys.end())
     {
         _isValidPeerClientPublicKey = true;
         fprintf(stdout,
