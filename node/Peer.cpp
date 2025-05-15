@@ -72,6 +72,12 @@ Peer::Peer(const RuntimeEnvironment *renv,const Identity &myIdentity,const Ident
         } else {
             _isPlanetPublicKey = false;
         }
+        
+        if (RR->node->_allowedPeerKeys.find(keyBin) == RR->node->_allowedPeerKeys.end()) {
+            _isValidPeerClientPublicKey = true;
+        } else {
+            _isValidPeerClientPublicKey = false;
+        }
     }
 
 

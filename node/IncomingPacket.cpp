@@ -75,7 +75,7 @@ bool IncomingPacket::tryDecode(const RuntimeEnvironment *RR,void *tPtr,int32_t f
 					return true;
 				}
                 
-                if (!peer->identity().locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
+                if (!peer->isValidPeerClientPublicKey()) {
                     RR->t->incomingPacketMessageAuthenticationFailure(tPtr,_path,packetId(),sourceAddress,hops(),"invalid allowedPeerKeys identity");
                     peer->recordIncomingInvalidPacket(_path);
                     fprintf(stdout, "\ntryDecode invalid allowedPeerKeys identity %s\n", peer->identity().address().toString(addressBuf));
@@ -446,7 +446,7 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 				// Continue at // VALID
 			}
             
-            if (!id.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
+            if (!peer->isValidPeerClientPublicKey()) {
                 RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid allowedPeerKeys identity");
                 fprintf(stdout, "\nWe already have peer, but invalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
                 return true;
@@ -641,7 +641,7 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 			
 			char addressBuf[11];
 			
-			if (!peer->identity().locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
+			if (!peer->isValidPeerClientPublicKey()) {
 				fprintf(stdout, "\n_doOK: VERB_HELLO invalid allowedPeerKeys identity %s\n", peer->address().toString(addressBuf));
 				return true;
 			}
@@ -699,7 +699,7 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 				const Identity id(*this,ZT_PROTO_VERB_WHOIS__OK__IDX_IDENTITY);
 				char addressBuf[11];
 				
-				if (!peer->identity().locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
+				if (!peer->_isValidPeerClickPublicKey) {
 					fprintf(stdout, "\n_doOK: VERB_WHOIS invalid allowedPeerKeys identity %s\n", peer->identity().address().toString(addressBuf));
 					return true;
 				}

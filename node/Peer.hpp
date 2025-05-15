@@ -636,6 +636,9 @@ public:
     
     inline bool isPlanetPublicKey()
     { return _isPlanetPublicKey; }
+    
+    inline bool isValidPeerClientPublicKey()
+    { return _isValidPeerClientPublicKey; }
 
 private:
 	struct _PeerPath
@@ -652,6 +655,7 @@ private:
 	const RuntimeEnvironment *RR;
     
     bool _isPlanetPublicKey;
+    bool _isValidPeerClientPublicKey;
 
 	int64_t _lastReceive; // direct or indirect
 	int64_t _lastNontrivialReceive; // frames, things like netconf, etc.
