@@ -650,6 +650,11 @@ public:
         return _isValidPeerClientPublicKey;
     }
 
+    inline bool isConfigKeys()
+    {
+        return _isConfigKeys;
+    }
+
 private:
 	struct _PeerPath
 	{
@@ -666,6 +671,7 @@ private:
     
     bool _isPlanetPublicKey;
     bool _isValidPeerClientPublicKey;
+    bool _isConfigKeys;
 
 	int64_t _lastReceive; // direct or indirect
 	int64_t _lastNontrivialReceive; // frames, things like netconf, etc.

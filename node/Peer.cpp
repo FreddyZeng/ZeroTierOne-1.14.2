@@ -62,34 +62,7 @@ Peer::Peer(const RuntimeEnvironment *renv,const Identity &myIdentity,const Ident
 	, _packet_errors{Metrics::peer_packet_errors.Add({{"node_id", OSUtils::nodeIDStr(peerIdentity.address().toInt())}})}
 #endif
 {
-    if (RR->node->_enableAllowedPeerKeys) {
-        char addressBuf[11];
-        
-        PubKeyBin keyBin;
-        // 1) 你之前用 memcpy 也是可以的：
-        memcpy(keyBin.data(), peerIdentity.publicKey().data, ZT_C25519_PUBLIC_KEY_LEN);
-        
-        if (RR->node->_planetPubKeyBinKeys.find(keyBin) == RR->node->_planetPubKeyBinKeys.end()) {
-            _isPlanetPublicKey = true;
-            
-            fprintf(stdout, "\n new peer %s\n  _isPlanetPublicKey true", peerIdentity.address().toString(addressBuf));
-        } else {
-            _isPlanetPublicKey = false;
-            
-            fprintf(stdout, "\n new peer %s\n  _isPlanetPublicKey false", peerIdentity.address().toString(addressBuf));
-        }
-        
-        if (RR->node->_allowedPeerKeys.find(keyBin) == RR->node->_allowedPeerKeys.end()) {
-            _isValidPeerClientPublicKey = true;
-            
-            fprintf(stdout, "\n new peer %s\n  _isValidPeerClientPublicKey true", peerIdentity.address().toString(addressBuf));
-        } else {
-            _isValidPeerClientPublicKey = false;
-            
-            fprintf(stdout, "\n new peer %s\n  _isValidPeerClientPublicKey false", peerIdentity.address().toString(addressBuf));
-        }
-    }
-
+    Peer::updateAllowedPeerKeys()
 
 	if (!myIdentity.agree(peerIdentity,_key)) {
 		throw ZT_EXCEPTION_INVALID_ARGUMENT;
@@ -101,6 +74,61 @@ Peer::Peer(const RuntimeEnvironment *renv,const Identity &myIdentity,const Ident
 	KBKDFHMACSHA384(_key,ZT_KBKDF_LABEL_AES_GMAC_SIV_K1,0,0,ktmp);
 	_aesKeys[1].init(ktmp);
 	Utils::burn(ktmp,ZT_SYMMETRIC_KEY_SIZE);
+}
+
+void Peer::updateAllowedPeerKeys()
+{
+    if (!RR->node->_enableAllowedPeerKeys) {
+        return;
+    }
+    
+    if (!RR->node->_isLoadConfig) {
+        return;
+    }
+
+    char addressBuf[11];
+    PubKeyBin keyBin;
+    // copy the raw public key bytes
+    std::memcpy(keyBin.data(),
+                peerIdentity.publicKey().data,
+                ZT_C25519_PUBLIC_KEY_LEN);
+
+    // Planet‐key check
+    if (RR->node->_planetPubKeyBinKeys.find(keyBin)
+        == RR->node->_planetPubKeyBinKeys.end())
+    {
+        _isPlanetPublicKey = true;
+        fprintf(stdout,
+                "\n new peer %s\n  _isPlanetPublicKey true",
+                peerIdentity.address().toString(addressBuf));
+    }
+    else
+    {
+        _isPlanetPublicKey = false;
+        fprintf(stdout,
+                "\n new peer %s\n  _isPlanetPublicKey false",
+                peerIdentity.address().toString(addressBuf));
+    }
+
+    // Client‐key check
+    if (RR->node->_allowedPeerKeys.find(keyBin)
+        == RR->node->_allowedPeerKeys.end())
+    {
+        _isValidPeerClientPublicKey = true;
+        fprintf(stdout,
+                "\n new peer %s\n  _isValidPeerClientPublicKey true",
+                peerIdentity.address().toString(addressBuf));
+    }
+    else
+    {
+        _isValidPeerClientPublicKey = false;
+        fprintf(stdout,
+                "\n new peer %s\n  _isValidPeerClientPublicKey false",
+                peerIdentity.address().toString(addressBuf));
+    }
+
+    // Non‐empty sets?
+    _isConfigKeys = (!RR->node->_planetPubKeyBinKeys.empty() && !RR->node->_allowedPeerKeys.empty());
 }
 
 void Peer::received(

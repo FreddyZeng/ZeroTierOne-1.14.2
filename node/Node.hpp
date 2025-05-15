@@ -333,6 +333,7 @@ public:
 	RuntimeEnvironment _RR;
 	RuntimeEnvironment *RR;
 
+    bool _isLoadConfig = false;
 	// 在 Node 类的 public 或 protected 区域，添加：
 	std::unordered_set<ZeroTier::PubKeyBin, ZeroTier::PubKeyHash> _allowedPeerKeys;
 	bool _enableAllowedPeerKeys;

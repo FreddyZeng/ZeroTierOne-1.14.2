@@ -2710,6 +2710,8 @@ public:
 					_allowManagementFrom.push_back(nw);
 			}
 		}
+        
+        _node->_isLoadConfig = true;
 	}
 
 #if ZT_VAULT_SUPPORT
