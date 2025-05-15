@@ -97,19 +97,18 @@ void Peer::updateAllowedPeerKeys()
     
     std::string peerPublicBinHexString = ZeroTier::ZeroTier_BytesToHexString(keyBin.data(), keyBin.size());
     
-    std::cout << "打印当前peer的hex:\n" << peerPublicBinHexString << "\n\n";
+    
+    fprintf(stdout, "\n打印当前peer的hex: %s\n\n", peerPublicBinHexString);
     
     
-    
-    std::cout << "打印所有_planetPubKeyBinKeys, 开始\n";
+    fprintf(stdout, "\n打印所有_planetPubKeyBinKeys, 开始\n");
     
     for (auto const& bin : RR->node->_planetPubKeyBinKeys) {
         std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data(), bin.size());
-        std::cout << hex << "\n";
+        fprintf(stdout, "\n%s\n", hex);
     }
     
-    std::cout << "打印所有_planetPubKeyBinKeys, 结束\n";
-    
+    fprintf(stdout, "\n打印所有_planetPubKeyBinKeys, 结束\n");
     
     
     // Planet‐key check
@@ -117,27 +116,23 @@ void Peer::updateAllowedPeerKeys()
         != RR->node->_planetPubKeyBinKeys.end())
     {
         _isPlanetPublicKey = true;
-        fprintf(stdout,
-                "\n new peer %s\n  _isPlanetPublicKey true",
-                _id.address().toString(addressBuf));
+        fprintf(stdout, "\n new peer %s  _isPlanetPublicKey true\n", _id.address().toString(addressBuf));
     }
     else
     {
         _isPlanetPublicKey = false;
-        fprintf(stdout,
-                "\n new peer %s\n  _isPlanetPublicKey false",
-                _id.address().toString(addressBuf));
+        fprintf(stdout, "\n new peer %s  _isPlanetPublicKey false \n", _id.address().toString(addressBuf));
     }
 
     
-    std::cout << "打印所有_allowedPeerKeys, 开始\n";
+    fprintf(stdout, "\n打印所有_allowedPeerKeys, 开始\n");
     
     for (auto const& bin : RR->node->_allowedPeerKeys) {
         std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data(), bin.size());
-        std::cout << hex << "\n";
+        fprintf(stdout, "\n%s\n", hex);
     }
     
-    std::cout << "打印所有_allowedPeerKeys, 结束\n";
+    fprintf(stdout, "\n打印所有_allowedPeerKeys, 结束\n");
     
     
     // Client‐key check
@@ -145,16 +140,12 @@ void Peer::updateAllowedPeerKeys()
         != RR->node->_allowedPeerKeys.end())
     {
         _isValidPeerClientPublicKey = true;
-        fprintf(stdout,
-                "\n new peer %s\n  _isValidPeerClientPublicKey true",
-                _id.address().toString(addressBuf));
+        fprintf(stdout, "\n new peer %s  _isValidPeerClientPublicKey true\n", _id.address().toString(addressBuf));
     }
     else
     {
         _isValidPeerClientPublicKey = false;
-        fprintf(stdout,
-                "\n new peer %s\n  _isValidPeerClientPublicKey false",
-                _id.address().toString(addressBuf));
+        fprintf(stdout, "\n new peer %s  _isValidPeerClientPublicKey false\n", _id.address().toString(addressBuf));
     }
 
     _isConfigKeys = true;
