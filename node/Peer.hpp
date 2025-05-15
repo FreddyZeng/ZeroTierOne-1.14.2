@@ -633,6 +633,9 @@ public:
 
 	inline const AES *aesKeys() const
 	{ return _aesKeys; }
+    
+    inline bool isPlanetPublicKey()
+    { return _isPlanetPublicKey; }
 
 private:
 	struct _PeerPath
@@ -647,6 +650,8 @@ private:
 	AES _aesKeys[2];
 
 	const RuntimeEnvironment *RR;
+    
+    bool _isPlanetPublicKey;
 
 	int64_t _lastReceive; // direct or indirect
 	int64_t _lastNontrivialReceive; // frames, things like netconf, etc.

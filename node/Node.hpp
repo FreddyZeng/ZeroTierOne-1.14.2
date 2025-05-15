@@ -336,6 +336,8 @@ public:
 	// 在 Node 类的 public 或 protected 区域，添加：
 	std::unordered_set<ZeroTier::PubKeyBin, ZeroTier::PubKeyHash> _allowedPeerKeys;
 	bool _enableAllowedPeerKeys;
+    
+    std::unordered_set<ZeroTier::PubKeyBin, ZeroTier::PubKeyHash> _planetPubKeyBinKeys;
 
 	void *_uPtr; // _uptr (lower case) is reserved in Visual Studio :P
 	ZT_Node_Callbacks _cb;

@@ -2582,24 +2582,49 @@ public:
 
 				for (auto &elem : localPublicKeyStrings) {
 					if (!elem.is_string()) {
-						fprintf(stderr, "\n✖ whitelist entry is not a string\n");
+						fprintf(stderr, "\n✖ localPublicKeyStrings: whitelist entry is not a string\n");
 						continue;
 					}
 					std::string hex = elem.get<std::string>();
 					ZeroTier::PubKeyBin key;
 					if (ZeroTier::ZeroTier_ParseHexPubKey(hex, key)) {
 						_node->_allowedPeerKeys.insert(key);
-						fprintf(stderr, "\n✔ loaded whitelist key: %s\n", hex.c_str());
+						fprintf(stderr, "\n✔ localPublicKeyStrings: loaded whitelist key: %s\n", hex.c_str());
 					} else {
-						fprintf(stderr, "\n✖ invalid public key hex: %s\n", hex.c_str());
+						fprintf(stderr, "\n✖ localPublicKeyStrings: invalid public key hex: %s\n", hex.c_str());
 					}
 				}
 			} else {
-				fprintf(stderr, "\n✖ no valid localPublicKeyStrings array in settings\n");
+				fprintf(stderr, "\n✖ localPublicKeyStrings: no valid localPublicKeyStrings array in settings\n");
 			}
 			int enableAllowedPeerKeys = settings.value("enableAllowedPeerKeys", 0);
 			_node->_enableAllowedPeerKeys = (enableAllowedPeerKeys != 0);
 
+            if (settings.contains("planetPublicKeyStrings")
+                && settings["planetPublicKeyStrings"].is_array())
+            {
+                auto &planetPublicKeyStrings = settings["planetPublicKeyStrings"];
+                fprintf(stderr, "\nplanetPublicKeyStrings JSON = %s\n",
+                        planetPublicKeyStrings.dump(2).c_str());
+
+                for (auto &elem : planetPublicKeyStrings) {
+                    if (!elem.is_string()) {
+                        fprintf(stderr, "\n✖ planetPublicKeyStrings: whitelist entry is not a string\n");
+                        continue;
+                    }
+                    std::string hex = elem.get<std::string>();
+                    ZeroTier::PubKeyBin key;
+                    if (ZeroTier::ZeroTier_ParseHexPubKey(hex, key)) {
+                        _node->_planetPubKeyBinKeys.insert(key);
+                        fprintf(stderr, "\n✔ planetPublicKeyStrings: loaded whitelist key: %s\n", hex.c_str());
+                    } else {
+                        fprintf(stderr, "\n✖ planetPublicKeyStrings: invalid public key hex: %s\n", hex.c_str());
+                    }
+                }
+            } else {
+                fprintf(stderr, "\n✖ planetPublicKeyStrings: no valid localPublicKeyStrings array in settings\n");
+            }
+            
 			// Check settings
 			if (defaultBondingPolicyStr.length() && !defaultBondingPolicy && !_node->bondController()->inUse()) {
 				fprintf(stderr, "error: unknown policy (%s) specified by defaultBondingPolicy, bond disabled.\n", defaultBondingPolicyStr.c_str());
