@@ -90,7 +90,7 @@ void Peer::updateAllowedPeerKeys()
     PubKeyBin keyBin;
     // copy the raw public key bytes
     std::memcpy(keyBin.data(),
-                peerIdentity.publicKey().data,
+                _id.publicKey().data,
                 ZT_C25519_PUBLIC_KEY_LEN);
 
     // Planet‐key check
@@ -100,14 +100,14 @@ void Peer::updateAllowedPeerKeys()
         _isPlanetPublicKey = true;
         fprintf(stdout,
                 "\n new peer %s\n  _isPlanetPublicKey true",
-                peerIdentity.address().toString(addressBuf));
+                _id.address().toString(addressBuf));
     }
     else
     {
         _isPlanetPublicKey = false;
         fprintf(stdout,
                 "\n new peer %s\n  _isPlanetPublicKey false",
-                peerIdentity.address().toString(addressBuf));
+                _id.address().toString(addressBuf));
     }
 
     // Client‐key check
@@ -117,14 +117,14 @@ void Peer::updateAllowedPeerKeys()
         _isValidPeerClientPublicKey = true;
         fprintf(stdout,
                 "\n new peer %s\n  _isValidPeerClientPublicKey true",
-                peerIdentity.address().toString(addressBuf));
+                _id.address().toString(addressBuf));
     }
     else
     {
         _isValidPeerClientPublicKey = false;
         fprintf(stdout,
                 "\n new peer %s\n  _isValidPeerClientPublicKey false",
-                peerIdentity.address().toString(addressBuf));
+                _id.address().toString(addressBuf));
     }
 
     // Non‐empty sets?
