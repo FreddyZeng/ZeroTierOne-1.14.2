@@ -14,6 +14,12 @@
 #ifndef ZT_C25519_HPP
 #define ZT_C25519_HPP
 
+#include <string>    // std::string
+#include <vector>    // std::vector<uint8_t>
+#include <cstdint>   // uint8_t
+#include <cstddef>   // size_t
+#include <cstring>   // std::memcpy, std::memcmp
+
 #include "Utils.hpp"
 
 
@@ -42,6 +48,67 @@ struct PubKeyHash {
 	}
 };
 
+// 将单个十六进制字符映射到 0–15，失败返回 false
+static bool ZeroTier_HexCharToValue(char c, uint8_t &out) {
+    if ('0' <= c && c <= '9') { out = c - '0'; return true; }
+    if ('a' <= c && c <= 'f') { out = c - 'a' + 10; return true; }
+    if ('A' <= c && c <= 'F') { out = c - 'A' + 10; return true; }
+    return false;
+}
+
+// 通用：解析任意偶数长度的 hex 字符串到字节数组
+// - hex: 非空且偶数长度，只能包含合法十六进制字符
+// - out: 解析后字节，长度 = hex.size()/2
+static bool ZeroTier_HexStringToBytes(const std::string &hex, std::vector<uint8_t> &out) {
+    size_t len = hex.size();
+    if (len == 0 || (len & 1)) {
+        return false;  // 长度检查
+    }
+    out.clear();
+    out.reserve(len / 2);
+    for (size_t i = 0; i < len; i += 2) {
+        uint8_t hi, lo;
+        if (!ZeroTier_HexCharToValue(hex[i], hi) ||
+            !ZeroTier_HexCharToValue(hex[i+1], lo)) {
+            return false;  // 非法字符
+        }
+        out.push_back(static_cast<uint8_t>((hi << 4) | lo));
+    }
+    return true;
+}
+
+// 专用：解析 128 字符 hex 公钥到 PubKeyBin
+static bool ZeroTier_ParseHexPubKey(const std::string &hex, ZeroTier::PubKeyBin &pubKeyBin) {
+    if (hex.size() != ZT_C25519_PUBLIC_KEY_LEN * 2) return false;
+    std::vector<uint8_t> buf;
+    if (!ZeroTier_HexStringToBytes(hex, buf)) return false;
+    // 直接 memcpy 最清晰
+    std::memcpy(pubKeyBin.data(), buf.data(), ZT_C25519_PUBLIC_KEY_LEN);
+    return true;
+}
+
+// 通用：把任意字节数组转换成 hex 字符串（小写）
+// - data: 指向输入字节流
+// - len:  数据长度
+// 返回：长度 = len*2 的 std::string，每个字节对应两个 hex 字符
+static std::string ZeroTier_BytesToHexString(const uint8_t* data, size_t len) {
+    static const char* hexDigits = "0123456789abcdef";
+    std::string s;
+    s.reserve(len * 2);
+    for (size_t i = 0; i < len; ++i) {
+        uint8_t b = data[i];
+        // 高 4 位
+        s.push_back(hexDigits[b >> 4]);
+        // 低 4 位
+        s.push_back(hexDigits[b & 0x0F]);
+    }
+    return s;
+}
+
+// 如果你有一个 PubKeyBin（固定长度），可以这样包一层：
+static std::string ZeroTier_PubKeyBinToHex(const PubKeyBin& pubKeyBin) {
+    return ZeroTier_BytesToHexString(pubKeyBin.data(), ZT_C25519_PUBLIC_KEY_LEN);
+}
 
 /**
  * A combined Curve25519 ECDH and Ed25519 signature engine
