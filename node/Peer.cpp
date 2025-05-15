@@ -62,14 +62,15 @@ Peer::Peer(const RuntimeEnvironment *renv,const Identity &myIdentity,const Ident
 	, _packet_errors{Metrics::peer_packet_errors.Add({{"node_id", OSUtils::nodeIDStr(peerIdentity.address().toInt())}})}
 #endif
 {
-    if (RR->_node->_enableAllowedPeerKeys) {
-        if (RR->_node->_planetPubKeyBinKeys) {
+    if (RR->node->_enableAllowedPeerKeys) {
+        if (RR->node->_planetPubKeyBinKeys) {
 
             PubKeyBin keyBin;
             // 1) 你之前用 memcpy 也是可以的：
-            memcpy(keyBin.data(), _publicKey.data, ZT_C25519_PUBLIC_KEY_LEN);
+            peerIdentity.
+            memcpy(keyBin.data(), peerIdentity->publicKey().data, ZT_C25519_PUBLIC_KEY_LEN);
             
-            if (RR->_node->_planetPubKeyBinKeys.find(keyBin) == RR->_node->_planetPubKeyBinKeys.end()) {
+            if (RR->node->_planetPubKeyBinKeys.find(keyBin) == RR->node->_planetPubKeyBinKeys.end()) {
                 _isPlanetPublicKey = true;
             } else {
                 _isPlanetPublicKey = false;
