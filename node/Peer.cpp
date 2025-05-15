@@ -62,7 +62,7 @@ Peer::Peer(const RuntimeEnvironment *renv,const Identity &myIdentity,const Ident
 	, _packet_errors{Metrics::peer_packet_errors.Add({{"node_id", OSUtils::nodeIDStr(peerIdentity.address().toInt())}})}
 #endif
 {
-    ZeroTier::Peer::updateAllowedPeerKeys()
+    ZeroTier::Peer::updateAllowedPeerKeys();
 
 	if (!myIdentity.agree(peerIdentity,_key)) {
 		throw ZT_EXCEPTION_INVALID_ARGUMENT;
