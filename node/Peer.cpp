@@ -127,8 +127,7 @@ void Peer::updateAllowedPeerKeys()
                 _id.address().toString(addressBuf));
     }
 
-    // Non‐empty sets?
-    _isConfigKeys = (!RR->node->_planetPubKeyBinKeys.empty() && !RR->node->_allowedPeerKeys.empty());
+    _isConfigKeys = true;
 }
 
 void Peer::received(

@@ -646,9 +646,11 @@ public:
             return true;
         }
         
-        if (!isConfigKeys()) {
-            ZeroTier::Peer::updateAllowedPeerKeys();
+        if (isConfigKeys()) {
+            return _isPlanetPublicKey;
         }
+        
+        ZeroTier::Peer::updateAllowedPeerKeys();
         
         return _isPlanetPublicKey;
     }
@@ -663,9 +665,11 @@ public:
             return false;
         }
         
-        if (!isConfigKeys()) {
-            ZeroTier::Peer::updateAllowedPeerKeys();
+        if (isConfigKeys()) {
+            return _isValidPeerClientPublicKey;
         }
+        
+        ZeroTier::Peer::updateAllowedPeerKeys();
         
         return _isValidPeerClientPublicKey;
     }
