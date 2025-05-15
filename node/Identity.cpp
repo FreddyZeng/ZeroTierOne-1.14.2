@@ -166,7 +166,7 @@ bool Identity::locallyValidateWithAllowedPeerKeys(const std::unordered_set<ZeroT
 
 
 	if (allowedPeerKeys.empty()) {
-		fprintf(stderr, "\nallowedPeerKeys is empty\n");
+		fprintf(stdout, "\nallowedPeerKeys is empty\n");
 		return false;
 	}
 

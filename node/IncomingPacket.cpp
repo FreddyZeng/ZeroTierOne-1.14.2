@@ -654,7 +654,7 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 				ptr += externalSurfaceAddress.deserialize(*this,ptr);
                 char buf[64];
                 externalSurfaceAddress.toString(buf);
-                fprintf(stderr, "\n_doOK: VERB_HELLO externalSurfaceAddress: %s  address: %s\n", buf, peer->address().toString(addressBuf));
+                fprintf(stdout, "\n_doOK: VERB_HELLO externalSurfaceAddress: %s  address: %s\n", buf, peer->address().toString(addressBuf));
             } else {
                 fprintf(stdout, "\n_doOK: VERB_HELLO ptr size big  address: %s\n", peer->address().toString(addressBuf));
             }
