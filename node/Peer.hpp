@@ -635,10 +635,20 @@ public:
 	{ return _aesKeys; }
     
     inline bool isPlanetPublicKey()
-    { return _isPlanetPublicKey; }
+    {
+        if (!RR->node->_enableAllowedPeerKeys) {
+            return true;
+        }
+        return _isPlanetPublicKey;
+    }
     
     inline bool isValidPeerClientPublicKey()
-    { return _isValidPeerClientPublicKey; }
+    {
+        if (!RR->node->_enableAllowedPeerKeys) {
+            return true;
+        }
+        return _isValidPeerClientPublicKey;
+    }
 
 private:
 	struct _PeerPath
