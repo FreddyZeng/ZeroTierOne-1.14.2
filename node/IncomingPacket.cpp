@@ -485,7 +485,7 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 			return true;
 		}
 
-		if (!id.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
+		if (!newPeer->isValidPeerClientPublicKey()) {
 			RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid allowedPeerKeys identity");
 			fprintf(stdout, "\n _doHELLO invalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
 			return true;

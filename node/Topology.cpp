@@ -401,12 +401,13 @@ void Topology::_memoizeUpstreams(void *tPtr)
 			if (!hp) {
 				char addressBuf[11];
 
-				if (!i->identity.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
-					fprintf(stdout, "\n add peer memoizeUpstreams invalid allowedPeerKeys identity %s\n", i->identity.address().toString(addressBuf));
-					break;
-				}
 
 				hp = new Peer(RR,RR->identity,id);
+                
+                if (!hp->isValidPeerClientPublicKey()) {
+                    fprintf(stdout, "\n add peer memoizeUpstreams invalid allowedPeerKeys identity %s\n", i->identity.address().toString(addressBuf));
+                    break;
+                }
 
 				fprintf(stdout, "\nadd peer memoizeUpstreams: %s\n", i->identity.address().toString(addressBuf));
 			}
@@ -423,7 +424,7 @@ void Topology::_memoizeUpstreams(void *tPtr)
 				if (!hp) {
 					char addressBuf[11];
 
-					if (!i->identity.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
+					if (!hp->isValidPeerClientPublicKey()) {
 						fprintf(stdout, "\n add peer memoizeUpstreams invalid allowedPeerKeys identity %s\n", i->identity.address().toString(addressBuf));
 						break;
 					}
