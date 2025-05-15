@@ -74,14 +74,14 @@ bool IncomingPacket::tryDecode(const RuntimeEnvironment *RR,void *tPtr,int32_t f
 					peer->recordIncomingInvalidPacket(_path);
 					return true;
 				}
+                
+                if (!peer->identity().locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
+                    RR->t->incomingPacketMessageAuthenticationFailure(tPtr,_path,packetId(),sourceAddress,hops(),"invalid allowedPeerKeys identity");
+                    peer->recordIncomingInvalidPacket(_path);
+                    fprintf(stdout, "\ntryDecode invalid allowedPeerKeys identity %s\n", peer->identity().address().toString(addressBuf));
+                    return true;
+                }
 			}
-
-            if (!peer->identity().locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
-                RR->t->incomingPacketMessageAuthenticationFailure(tPtr,_path,packetId(),sourceAddress,hops(),"invalid allowedPeerKeys identity");
-                peer->recordIncomingInvalidPacket(_path);
-                fprintf(stdout, "\ntryDecode invalid allowedPeerKeys identity %s\n", peer->identity().address().toString(addressBuf));
-                return true;
-            }
 
 			if (!uncompress()) {
 				RR->t->incomingPacketInvalid(tPtr,_path,packetId(),sourceAddress,hops(),Packet::VERB_NOP,"LZ4 decompression failed");
@@ -399,13 +399,6 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 	char addressBuf[11];
 	SharedPtr<Peer> peer(RR->topology->getPeer(tPtr,id.address()));
 	if (peer) {
-        
-        if (!id.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
-            RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid allowedPeerKeys identity");
-            fprintf(stdout, "\nWe already have peer, but invalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
-            return true;
-        }
-		
         fprintf(stdout, "\nWe already have an identity with this address: %s\n", id.address().toString(addressBuf));
 		// We already have an identity with this address -- check for collisions
 		if (!alreadyAuthenticated) {
@@ -452,6 +445,13 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 
 				// Continue at // VALID
 			}
+            
+            if (!id.locallyValidateWithAllowedPeerKeys(RR->node->_allowedPeerKeys, RR->node->_enableAllowedPeerKeys)) {
+                RR->t->incomingPacketDroppedHELLO(tPtr,_path,pid,fromAddress,"invalid allowedPeerKeys identity");
+                fprintf(stdout, "\nWe already have peer, but invalid allowedPeerKeys identity %s\n", id.address().toString(addressBuf));
+                return true;
+            }
+            
 		} // else if alreadyAuthenticated then continue at // VALID
 	} else {
 		// We don't already have an identity with this address -- validate and learn it
