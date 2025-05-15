@@ -101,7 +101,7 @@ void Peer::updateAllowedPeerKeys()
     
     std::cout << "打印所有_planetPubKeyBinKeys, 开始\n";
     
-    for (auto const& bin : _planetPubKeyBinKeys) {
+    for (auto const& bin : RR->node->_planetPubKeyBinKeys) {
         std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data, ZT_C25519_PUBLIC_KEY_LEN);
         std::cout << hex << "\n";
     }
@@ -130,7 +130,7 @@ void Peer::updateAllowedPeerKeys()
     
     std::cout << "打印所有_allowedPeerKeys, 开始\n";
     
-    for (auto const& bin : _allowedPeerKeys) {
+    for (auto const& bin : RR->node->_allowedPeerKeys) {
         std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data, ZT_C25519_PUBLIC_KEY_LEN);
         std::cout << hex << "\n";
     }
