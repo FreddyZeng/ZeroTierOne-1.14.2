@@ -92,7 +92,24 @@ void Peer::updateAllowedPeerKeys()
     std::memcpy(keyBin.data(),
                 _id.publicKey().data,
                 ZT_C25519_PUBLIC_KEY_LEN);
-
+    
+    std::string peerPublicBinHexString = ZeroTier::ZeroTier_BytesToHexString(keyBin, ZT_C25519_PUBLIC_KEY_LEN);
+    
+    std::cout << "打印当前peer的hex:\n" << peerPublicBinHexString << "\n\n";
+    
+    
+    
+    std::cout << "打印所有_planetPubKeyBinKeys, 开始\n";
+    
+    for (auto const& bin : _planetPubKeyBinKeys) {
+        std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data, ZT_C25519_PUBLIC_KEY_LEN);
+        std::cout << hex << "\n";
+    }
+    
+    std::cout << "打印所有_planetPubKeyBinKeys, 结束\n";
+    
+    
+    
     // Planet‐key check
     if (RR->node->_planetPubKeyBinKeys.find(keyBin)
         == RR->node->_planetPubKeyBinKeys.end())
@@ -110,6 +127,17 @@ void Peer::updateAllowedPeerKeys()
                 _id.address().toString(addressBuf));
     }
 
+    
+    std::cout << "打印所有_allowedPeerKeys, 开始\n";
+    
+    for (auto const& bin : _allowedPeerKeys) {
+        std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data, ZT_C25519_PUBLIC_KEY_LEN);
+        std::cout << hex << "\n";
+    }
+    
+    std::cout << "打印所有_allowedPeerKeys, 结束\n";
+    
+    
     // Client‐key check
     if (RR->node->_allowedPeerKeys.find(keyBin)
         == RR->node->_allowedPeerKeys.end())
