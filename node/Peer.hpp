@@ -68,7 +68,7 @@ public:
 	 */
 	Peer(const RuntimeEnvironment *renv,const Identity &myIdentity,const Identity &peerIdentity);
     
-    updateAllowedPeerKeys();
+    void updateAllowedPeerKeys();
 
 	/**
 	 * @return This peer's ZT address (short for identity().address())
