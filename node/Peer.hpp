@@ -637,7 +637,7 @@ public:
     inline bool isPlanetPublicKey()
     {
         if (!RR->node->_enableAllowedPeerKeys) {
-            return true;
+            return false;
         }
         return _isPlanetPublicKey;
     }
