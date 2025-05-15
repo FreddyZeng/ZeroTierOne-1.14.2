@@ -647,7 +647,7 @@ public:
         }
         
         if (!isConfigKeys()) {
-            Peer::updateAllowedPeerKeys();
+            ZeroTier::Peer::updateAllowedPeerKeys();
         }
         
         return _isPlanetPublicKey;
@@ -664,7 +664,7 @@ public:
         }
         
         if (!isConfigKeys()) {
-            Peer::updateAllowedPeerKeys();
+            ZeroTier::Peer::updateAllowedPeerKeys();
         }
         
         return _isValidPeerClientPublicKey;
