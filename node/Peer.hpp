@@ -67,6 +67,8 @@ public:
 	 * @throws std::runtime_error Key agreement with peer's identity failed
 	 */
 	Peer(const RuntimeEnvironment *renv,const Identity &myIdentity,const Identity &peerIdentity);
+    
+    updateAllowedPeerKeys();
 
 	/**
 	 * @return This peer's ZT address (short for identity().address())
@@ -639,6 +641,15 @@ public:
         if (!RR->node->_enableAllowedPeerKeys) {
             return false;
         }
+        
+        if (!RR->node->_isLoadConfig) {
+            return true;
+        }
+        
+        if (!isConfigKeys()) {
+            Peer::updateAllowedPeerKeys();
+        }
+        
         return _isPlanetPublicKey;
     }
     
@@ -647,6 +658,15 @@ public:
         if (!RR->node->_enableAllowedPeerKeys) {
             return true;
         }
+        
+        if (!RR->node->_isLoadConfig) {
+            return false;
+        }
+        
+        if (!isConfigKeys()) {
+            Peer::updateAllowedPeerKeys();
+        }
+        
         return _isValidPeerClientPublicKey;
     }
 
