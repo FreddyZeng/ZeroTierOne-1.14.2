@@ -699,7 +699,7 @@ bool IncomingPacket::_doOK(const RuntimeEnvironment *RR,void *tPtr,const SharedP
 				const Identity id(*this,ZT_PROTO_VERB_WHOIS__OK__IDX_IDENTITY);
 				char addressBuf[11];
 				
-				if (!peer->_isValidPeerClickPublicKey) {
+				if (!peer->isValidPeerClientPublicKey()) {
 					fprintf(stdout, "\n_doOK: VERB_WHOIS invalid allowedPeerKeys identity %s\n", peer->identity().address().toString(addressBuf));
 					return true;
 				}
