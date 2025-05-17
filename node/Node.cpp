@@ -402,6 +402,8 @@ ZT_ResultCode Node::processBackgroundTasks(void *tptr,int64_t now,volatile int64
 			// Ping active peers, upstreams, and others that we should always contact
 			_PingPeersThatNeedPing pfunc(RR,tptr,alwaysContact,now);
 			RR->topology->eachPeer<_PingPeersThatNeedPing &>(pfunc);
+            
+            // 自定义ping，保持节点高连接？？
 
 			// Run WHOIS to create Peer for alwaysContact addresses that could not be contacted
 			{
