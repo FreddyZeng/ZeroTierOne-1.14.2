@@ -15,6 +15,9 @@ LDLIBS?=
 DESTDIR?=
 EXTRA_DEPS?=
 
+override LDFLAGS += /usr/local/lib/libzmq.a
+
+
 include objects.mk
 ONE_OBJS+=osdep/LinuxEthernetTap.o
 ONE_OBJS+=osdep/LinuxNetLink.o

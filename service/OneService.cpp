@@ -30,6 +30,8 @@
 #include <pthread_np.h>
 #endif
 
+#include <zmq.h>
+
 #include "../version.h"
 #include "../include/ZeroTierOne.h"
 
