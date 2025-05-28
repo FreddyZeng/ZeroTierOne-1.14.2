@@ -180,7 +180,7 @@ void Peer::received(
                 
                 // 获取所有peers， 并且获取所有的path，然后封装成数组，发送给另外的进程
                 const char *msg = "Hello via IPC! 🌐";
-                zmq_send(RR->node->zmqSocket.get(), msg, strlen(msg), 0);
+                zmq_send(RR->node->zmqSocket->get(), msg, strlen(msg), 0);
                 
 			} else {
 				Mutex::Lock ltl(_lastTriedPath_m);
