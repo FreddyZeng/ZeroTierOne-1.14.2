@@ -775,6 +775,32 @@ struct PacketRecord
 	uint8_t data[ZT_MAX_MTU];
 };
 
+class ZmqContext {
+public:
+    ZmqContext() {
+        context_ = zmq_ctx_new();
+    }
+    ~ZmqContext() {
+        if (context_) zmq_ctx_destroy(context_);
+    }
+    void* get() const { return context_; }
+private:
+    void* context_;
+};
+
+class ZmqSocket {
+public:
+    ZmqSocket(ZmqContext& ctx, int type) {
+        socket_ = zmq_socket(ctx.get(), type);
+    }
+    ~ZmqSocket() {
+        if (socket_) zmq_close(socket_);
+    }
+    void* get() const { return socket_; }
+private:
+    void* socket_;
+};
+
 class OneServiceImpl : public OneService
 {
 public:
@@ -866,6 +892,9 @@ public:
 	std::vector< TcpConnection * > _tcpConnections;
 	Mutex _tcpConnections_m;
 	TcpConnection *_tcpFallbackTunnel;
+    
+    ZmqContext _zmqContext;
+    ZmqSocket _zmqSocket;
 
 	// Termination status information
 	ReasonForTermination _termReason;
@@ -936,6 +965,8 @@ public:
 		,_run(true)
 		,_rc(NULL)
 		,_ssoRedirectURL()
+        , _zmqContext()
+        , _zmqSocket(_zmqContext, ZMQ_REQ)
 	{
 		_ports[0] = 0;
 		_ports[1] = 0;
