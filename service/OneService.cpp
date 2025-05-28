@@ -940,10 +940,10 @@ public:
 		,_rc(NULL)
 		,_ssoRedirectURL()
         , _zmqContext()
-        , _zmqSocket(_zmqContext, ZMQ_PUSH)
+        , _zmqSocket(_zmqContext, ZMQ_PUB)
 	{
         if (_zmqContext.get() != NULL) {
-            zmq_connect(_zmqContext.get(), "ipc:///tmp/zmq/zerotier_tcp_relay");
+            zmq_bind(_zmqSocket.get(), "ipc:///tmp/zmq/zerotier_tcp_relay");
         }
 
 		_ports[0] = 0;

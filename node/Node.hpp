@@ -349,7 +349,7 @@ public:
 	std::vector<InetAddress> _directPaths;
 	Mutex _directPaths_m;
     
-    ZeroTier::ZmqContext *zmq_connect;
+    ZeroTier::ZmqContext *zmqContext;
     ZeroTier::ZmqSocket *zmqSocket;
 
 	Mutex _backgroundTasksLock;
