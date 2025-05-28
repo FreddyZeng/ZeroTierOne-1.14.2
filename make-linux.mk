@@ -9,13 +9,12 @@ ifeq ($(origin CXX),default)
 	CXX:=$(shell if [ -e /opt/rh/devtoolset-8/root/usr/bin/g++ ]; then echo /opt/rh/devtoolset-8/root/usr/bin/g++; else echo $(CXX); fi)
 endif
 
-INCLUDES?=-Irustybits/target -isystem ext -Iext/prometheus-cpp-lite-1.0/core/include -Iext-prometheus-cpp-lite-1.0/3rdparty/http-client-lite/include -Iext/prometheus-cpp-lite-1.0/simpleapi/include
+INCLUDES?=-Irustybits/target -isystem ext -Iext/prometheus-cpp-lite-1.0/core/include -Iext-prometheus-cpp-lite-1.0/3rdparty/http-client-lite/include -Iext/prometheus-cpp-lite-1.0/simpleapi/include -I/usr/local/include
 DEFS?=
-LDLIBS?=
+LDLIBS?=-lrt -lzmq -lsodium -lgssapi_krb5 -lpthread
 DESTDIR?=
 EXTRA_DEPS?=
-
-override LDFLAGS += /usr/local/lib/libzmq.a
+LDFLAGS?=-L/usr/local/lib
 
 
 include objects.mk
@@ -74,7 +73,7 @@ else
 	override CFLAGS+=-Wall -Wno-deprecated -pthread $(INCLUDES) -DNDEBUG $(DEFS)
 	CXXFLAGS?=-O3 -fstack-protector
 	override CXXFLAGS+=-Wall -Wno-deprecated -std=c++17 -pthread $(INCLUDES) -DNDEBUG $(DEFS)
-	LDFLAGS?=-pie -Wl,-z,relro,-z,now
+	LDFLAGS+=-pie -Wl,-z,relro,-z,now
 	ZT_CARGO_FLAGS=--release
 endif
 
