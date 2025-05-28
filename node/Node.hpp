@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <zmq.h>
+
 #include <map>
 #include <vector>
 
@@ -42,6 +44,32 @@
 #define ZT_EXPECTING_REPLIES_BUCKET_MASK2 31
 
 namespace ZeroTier {
+
+class ZmqContext {
+public:
+    ZmqContext() {
+        context_ = zmq_ctx_new();
+    }
+    ~ZmqContext() {
+        if (context_) zmq_ctx_destroy(context_);
+    }
+    void* get() const { return context_; }
+private:
+    void* context_;
+};
+
+class ZmqSocket {
+public:
+    ZmqSocket(ZmqContext& ctx, int type) {
+        socket_ = zmq_socket(ctx.get(), type);
+    }
+    ~ZmqSocket() {
+        if (socket_) zmq_close(socket_);
+    }
+    void* get() const { return socket_; }
+private:
+    void* socket_;
+};
 
 class World;
 
@@ -320,6 +348,9 @@ public:
 
 	std::vector<InetAddress> _directPaths;
 	Mutex _directPaths_m;
+    
+    ZeroTier::ZmqContext *zmq_connect;
+    ZeroTier::ZmqSocket *zmqSocket;
 
 	Mutex _backgroundTasksLock;
 

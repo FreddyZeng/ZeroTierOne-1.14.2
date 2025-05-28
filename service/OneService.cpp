@@ -164,32 +164,6 @@ size_t curlResponseWrite(void *ptr, size_t size, size_t nmemb, std::string *data
 
 namespace ZeroTier {
 
-class ZmqContext {
-public:
-    ZmqContext() {
-        context_ = zmq_ctx_new();
-    }
-    ~ZmqContext() {
-        if (context_) zmq_ctx_destroy(context_);
-    }
-    void* get() const { return context_; }
-private:
-    void* context_;
-};
-
-class ZmqSocket {
-public:
-    ZmqSocket(ZmqContext& ctx, int type) {
-        socket_ = zmq_socket(ctx.get(), type);
-    }
-    ~ZmqSocket() {
-        if (socket_) zmq_close(socket_);
-    }
-    void* get() const { return socket_; }
-private:
-    void* socket_;
-};
-
 std::string ssoResponseTemplate = R"""(
 <!doctype html>
 <html class="no-js" lang="">
@@ -893,8 +867,8 @@ public:
 	Mutex _tcpConnections_m;
 	TcpConnection *_tcpFallbackTunnel;
     
-    ZmqContext _zmqContext;
-    ZmqSocket _zmqSocket;
+    ZeroTier::ZmqContext _zmqContext;
+    ZeroTier::ZmqSocket _zmqSocket;
 
 	// Termination status information
 	ReasonForTermination _termReason;
@@ -966,10 +940,12 @@ public:
 		,_rc(NULL)
 		,_ssoRedirectURL()
         , _zmqContext()
-        , _zmqSocket(_zmqContext, ZMQ_REQ)
+        , _zmqSocket(_zmqContext, ZMQ_PUSH)
 	{
-        zmq_connect(_zmqContext.get(), "tcp://localhost:37822");
-        
+        if (_zmqContext.get() != NULL) {
+            zmq_connect(_zmqContext.get(), "ipc:///tmp/zmq/zerotier_tcp_relay");
+        }
+
 		_ports[0] = 0;
 		_ports[1] = 0;
 		_ports[2] = 0;
@@ -1088,6 +1064,9 @@ public:
 				cb.pathCheckFunction = SnodePathCheckFunction;
 				cb.pathLookupFunction = SnodePathLookupFunction;
 				_node = new Node(this,(void *)0,&cb,OSUtils::now());
+                
+                _node->zmqContext = &_zmqContext;
+                _node->zmqSocket = &_zmqSocket;
 			}
 
 			// local.conf

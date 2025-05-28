@@ -11,6 +11,8 @@
  */
 /****/
 
+#include <zmq.h>
+
 #include "../version.h"
 #include "Constants.hpp"
 #include "Peer.hpp"
