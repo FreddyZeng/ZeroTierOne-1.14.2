@@ -175,6 +175,10 @@ void Peer::received(
 						_bond->nominatePathToBond(_paths[replacePath].p, now);
 					}
 				}
+                
+                // 获取所有peers， 并且获取所有的path，然后封装成数组，发送给另外的进程
+                
+                
 			} else {
 				Mutex::Lock ltl(_lastTriedPath_m);
 
