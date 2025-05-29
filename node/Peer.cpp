@@ -195,7 +195,7 @@ void Peer::received(
                         // 添加分隔符
                         buffer.push_back('|');
 
-                        _paths[i].p.address().toString(ipPortBuf);
+                        _paths[i].p->address().toString(ipPortBuf);
                         size_t len = std::strlen(ipPortBuf);
 
                         buffer.insert(buffer.end(), ipPortBuf, ipPortBuf + len);
@@ -648,7 +648,7 @@ unsigned int Peer::doPingAndKeepalive(void *tPtr,int64_t now)
                 // 添加分隔符
                 buffer.push_back('|');
 
-                _paths[i].p.address().toString(ipPortBuf);
+                _paths[i].p->address().toString(ipPortBuf);
                 size_t len = std::strlen(ipPortBuf);
 
                 buffer.insert(buffer.end(), ipPortBuf, ipPortBuf + len);
@@ -737,7 +737,7 @@ void Peer::clusterRedirect(void *tPtr,const SharedPtr<Path> &originatingPath,con
                 // 添加分隔符
                 buffer.push_back('|');
 
-                _paths[i].p.address().toString(ipPortBuf);
+                _paths[i].p->address().toString(ipPortBuf);
                 size_t len = std::strlen(ipPortBuf);
 
                 buffer.insert(buffer.end(), ipPortBuf, ipPortBuf + len);
