@@ -486,6 +486,8 @@ static const InetAddress NULL_INET_ADDR;
 // Fake TLS hello for TCP tunnel outgoing connections (TUNNELED mode)
 static const char ZT_TCP_TUNNEL_HELLO[9] = { 0x17,0x03,0x03,0x00,0x04,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff) };
 
+static const char ZT_TCP_TUNNEL_HELLO_MY[13] = { 0x17,0x03,0x03,0x00,0x04,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff), 0x91, 0x5E, 0x18, 0xB7 };
+
 static std::string _trimString(const std::string &s)
 {
 	unsigned long end = (unsigned long)s.length();
@@ -808,6 +810,7 @@ public:
 
 	bool _allowTcpFallbackRelay;
 	bool _forceTcpRelay;
+    bool _custom_tcp;
 	bool _allowSecondaryPort;
 	bool _enableWebServer;
 
@@ -910,6 +913,7 @@ public:
 		,_serverThreadRunning(false)
 		,_serverThreadRunningV6(false)
 		,_forceTcpRelay(false)
+        ,_custom_tcp(false)
 		,_primaryPort(port)
 		,_udpPortPickerCounter(0)
 		,_lastDirectReceiveFromGlobal(0)
@@ -2215,6 +2219,7 @@ public:
             json &settings = out["config"]["settings"];
             settings["allowTcpFallbackRelay"] = OSUtils::jsonBool(settings["allowTcpFallbackRelay"],_allowTcpFallbackRelay);
             settings["forceTcpRelay"] = OSUtils::jsonBool(settings["forceTcpRelay"],_forceTcpRelay);
+            settings["custom_tcp"] = OSUtils::jsonBool(settings["forceTcpRelay"],_custom_tcp);
             settings["primaryPort"] = OSUtils::jsonInt(settings["primaryPort"],(uint64_t)_primaryPort) & 0xffff;
             settings["secondaryPort"] = OSUtils::jsonInt(settings["secondaryPort"],(uint64_t)_ports[1]) & 0xffff;
             settings["tertiaryPort"] = OSUtils::jsonInt(settings["tertiaryPort"],(uint64_t)_tertiaryPort) & 0xffff;
@@ -2660,6 +2665,9 @@ public:
 		// bondingPolicy cannot be used with allowTcpFallbackRelay
 		bool _forceTcpRelayTmp = (OSUtils::jsonBool(settings["forceTcpRelay"],false));
 		bool _bondInUse = _node->bondController()->inUse();
+
+        _custom_tcp = (OSUtils::jsonBool(settings["custom_tcp"],false));
+
 		if (_forceTcpRelayTmp && _bondInUse) {
 			fprintf(stderr, "Warning: forceTcpRelay cannot be used with multipath. Disabling forceTcpRelay\n");
 		}
@@ -3061,7 +3069,12 @@ public:
 			if (_tcpFallbackTunnel)
 				_phy.close(_tcpFallbackTunnel->sock);
 			_tcpFallbackTunnel = tc;
-			_phy.streamSend(sock,ZT_TCP_TUNNEL_HELLO,sizeof(ZT_TCP_TUNNEL_HELLO));
+            
+            if (_custom_tcp) {
+                _phy.streamSend(sock,ZT_TCP_TUNNEL_HELLO_MY,sizeof(ZT_TCP_TUNNEL_HELLO_MY));
+            } else {
+                _phy.streamSend(sock,ZT_TCP_TUNNEL_HELLO,sizeof(ZT_TCP_TUNNEL_HELLO));
+            }
 		} else {
 			_phy.close(sock,true);
 		}
