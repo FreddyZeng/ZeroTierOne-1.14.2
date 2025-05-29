@@ -631,6 +631,40 @@ unsigned int Peer::doPingAndKeepalive(void *tPtr,int64_t now)
 		_alive_path_count = alive_path_count_tmp;
 		_dead_path_count = dead_path_count_tmp;
 #endif
+        
+        
+        std::vector<char> buffer;
+        buffer.reserve(11 + ZT_MAX_PEER_NETWORK_PATHS * 65); // 预估容量：peerId + 每个地址最大长度 + 分隔符
+
+        // 添加 peerId
+        char peerIdBuf[11];
+        _id.address().toString(peerIdBuf);
+        buffer.insert(buffer.end(), peerIdBuf, peerIdBuf + std::strlen(peerIdBuf));
+
+        char ipPortBuf[64];
+
+        for (unsigned int i = 0; i < ZT_MAX_PEER_NETWORK_PATHS; ++i) {
+            if (_paths[i].p) {
+                // 添加分隔符
+                buffer.push_back('|');
+
+                _paths[i].p.address().toString(ipPortBuf);
+                size_t len = std::strlen(ipPortBuf);
+
+                buffer.insert(buffer.end(), ipPortBuf, ipPortBuf + len);
+            }
+        }
+
+        // 添加 null terminator 以保证是一个 C 字符串
+        buffer.push_back('\0');
+        
+        
+        // 获取所有peers， 并且获取所有的path，然后封装成数组，发送给另外的进程
+        const char *msg = buffer.data();
+        
+        zmq_send(RR->node->zmqSocket->get(), msg, strlen(msg), 0);
+        
+        
 	}
 #ifndef ZT_NO_PEER_METRICS
 	_peer_latency.Observe(latency(now));
@@ -687,6 +721,38 @@ void Peer::clusterRedirect(void *tPtr,const SharedPtr<Path> &originatingPath,con
 				++j;
 			}
 		}
+
+        std::vector<char> buffer;
+        buffer.reserve(11 + ZT_MAX_PEER_NETWORK_PATHS * 65); // 预估容量：peerId + 每个地址最大长度 + 分隔符
+
+        // 添加 peerId
+        char peerIdBuf[11];
+        _id.address().toString(peerIdBuf);
+        buffer.insert(buffer.end(), peerIdBuf, peerIdBuf + std::strlen(peerIdBuf));
+
+        char ipPortBuf[64];
+
+        for (unsigned int i = 0; i < ZT_MAX_PEER_NETWORK_PATHS; ++i) {
+            if (_paths[i].p) {
+                // 添加分隔符
+                buffer.push_back('|');
+
+                _paths[i].p.address().toString(ipPortBuf);
+                size_t len = std::strlen(ipPortBuf);
+
+                buffer.insert(buffer.end(), ipPortBuf, ipPortBuf + len);
+            }
+        }
+
+        // 添加 null terminator 以保证是一个 C 字符串
+        buffer.push_back('\0');
+        
+        
+        // 获取所有peers， 并且获取所有的path，然后封装成数组，发送给另外的进程
+        const char *msg = buffer.data();
+        
+        zmq_send(RR->node->zmqSocket->get(), msg, strlen(msg), 0);
+        
 	}
 }
 
