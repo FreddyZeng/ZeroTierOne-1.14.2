@@ -19,6 +19,7 @@
 #include <cstdint>   // uint8_t
 #include <cstddef>   // size_t
 #include <cstring>   // std::memcpy, std::memcmp
+#include <array>
 
 #include "Utils.hpp"
 
