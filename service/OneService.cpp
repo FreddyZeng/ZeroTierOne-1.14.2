@@ -486,7 +486,7 @@ static const InetAddress NULL_INET_ADDR;
 // Fake TLS hello for TCP tunnel outgoing connections (TUNNELED mode)
 static const char ZT_TCP_TUNNEL_HELLO[9] = { 0x17,0x03,0x03,0x00,0x04,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff) };
 
-static const char ZT_TCP_TUNNEL_HELLO_MY[13] = { 0x17,0x03,0x03,0x00,0x04,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff), 0x91, 0x5E, 0x18, 0xB7 };
+static const char ZT_TCP_TUNNEL_HELLO_MY[13] = { 0x17,0x03,0x03,0x00,0x08,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff), 0x91, 0x5E, 0x18, 0xB7 };
 
 static std::string _trimString(const std::string &s)
 {
