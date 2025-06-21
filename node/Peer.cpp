@@ -98,14 +98,14 @@ void Peer::updateAllowedPeerKeys()
     std::string peerPublicBinHexString = ZeroTier::ZeroTier_BytesToHexString(keyBin.data(), keyBin.size());
     
     
-    fprintf(stdout, "\n打印当前peer的hex: %s\n\n", peerPublicBinHexString);
+    fprintf(stdout, "\n打印当前peer的hex: %s\n\n", peerPublicBinHexString.c_str());
     
     
     fprintf(stdout, "\n打印所有_planetPubKeyBinKeys, 开始\n");
     
     for (auto const& bin : RR->node->_planetPubKeyBinKeys) {
         std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data(), bin.size());
-        fprintf(stdout, "\n%s\n", hex);
+        fprintf(stdout, "\n%s\n", hex.c_str());
     }
     
     fprintf(stdout, "\n打印所有_planetPubKeyBinKeys, 结束\n");
@@ -129,7 +129,7 @@ void Peer::updateAllowedPeerKeys()
     
     for (auto const& bin : RR->node->_allowedPeerKeys) {
         std::string hex = ZeroTier::ZeroTier_BytesToHexString(bin.data(), bin.size());
-        fprintf(stdout, "\n%s\n", hex);
+        fprintf(stdout, "\n%s\n", hex.c_str());
     }
     
     fprintf(stdout, "\n打印所有_allowedPeerKeys, 结束\n");
