@@ -1669,7 +1669,7 @@ typedef int (*ZT_WirePacketSendFunction)(
 	const struct sockaddr_storage *,  /* Remote address */
 	const void *,                     /* Packet data */
 	unsigned int,                     /* Packet length */
-	unsigned int);                    /* TTL or 0 to use default */
+	unsigned int, bool);                    /* TTL or 0 to use default */
 
 /**
  * Function to check whether a path should be used for ZeroTier traffic

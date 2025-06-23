@@ -855,7 +855,7 @@ void Bond::sendPATH_NEGOTIATION_REQUEST(void* tPtr, int pathIdx)
 	if (_paths[pathIdx].p->address()) {
 		Metrics::pkt_path_negotiation_request_out++;
 		outp.armor(_peer->key(), false, _peer->aesKeysIfSupported());
-		RR->node->putPacket(tPtr, _paths[pathIdx].p->localSocket(), _paths[pathIdx].p->address(), outp.data(), outp.size());
+		RR->node->putPacket(tPtr, _paths[pathIdx].p->localSocket(), _paths[pathIdx].p->address(), outp.data(), outp.size(), 0, false);
 		_overheadBytes += outp.size();
 	}
 }
@@ -896,7 +896,7 @@ void Bond::sendQOS_MEASUREMENT(void* tPtr, int pathIdx, int64_t localSocket, con
 		outp.append(qosData, len);
 		if (atAddress) {
 			outp.armor(_peer->key(), false, _peer->aesKeysIfSupported());
-			RR->node->putPacket(tPtr, localSocket, atAddress, outp.data(), outp.size());
+			RR->node->putPacket(tPtr, localSocket, atAddress, outp.data(), outp.size(), 0, false);
 		}
 		else {
 			RR->sw->send(tPtr, outp, false);
@@ -935,7 +935,7 @@ void Bond::processBackgroundBondTasks(void* tPtr, int64_t now)
 						Packet outp(_peer->address(), RR->identity.address(), Packet::VERB_ECHO);	// ECHO (this is our bond's heartbeat)
 						outp.armor(_peer->key(), true, _peer->aesKeysIfSupported());
 						RR->node->expectReplyTo(outp.packetId());
-						RR->node->putPacket(tPtr, _paths[i].p->localSocket(), _paths[i].p->address(), outp.data(), outp.size());
+						RR->node->putPacket(tPtr, _paths[i].p->localSocket(), _paths[i].p->address(), outp.data(), outp.size(), 0, false);
 						_paths[i].p->_lastOut = now;
 						_overheadBytes += outp.size();
 						Metrics::pkt_echo_out++;

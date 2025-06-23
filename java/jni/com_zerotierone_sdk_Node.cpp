@@ -592,7 +592,8 @@ namespace {
         const struct sockaddr_storage *remoteAddress,
         const void *buffer,
         unsigned int bufferSize,
-        unsigned int ttl)
+        unsigned int ttl,
+		bool isTCPOnly)
     {
         LOGV("WirePacketSendFunction(%" PRId64 ", %p, %p, %u, %u)", localSocket, remoteAddress, buffer, bufferSize, ttl);
         JniRef *ref = (JniRef*)userData;

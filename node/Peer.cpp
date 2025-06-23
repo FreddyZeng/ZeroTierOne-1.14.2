@@ -335,6 +335,7 @@ void Peer::received(
 	}
 }
 
+// flowId 获取path
 SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32_t flowId)
 {
 	Mutex::Lock _l(_paths_m);
@@ -528,11 +529,29 @@ void Peer::sendHELLO(void *tPtr,const int64_t localSocket,const InetAddress &atA
 	outp.cryptField(_key,startCryptedPortionAt,outp.size() - startCryptedPortionAt);
 
 	Metrics::pkt_hello_out++;
+	
+	
+	// 1. 【深拷贝】创建一个完全独立的副本
+	Packet tcpOutp = outp;
+
+	// 2. 【修改】为新包生成并设置一个全新的、唯一的Packet ID
+	uint64_t tcpId;
+	Utils::getSecureRandom(&newId, sizeof(newId)); // 使用我们之前讨论过的安全随机函数
+	// ZT_PACKET_FRAGMENT_IDX_PACKET_ID 的值是 0，代表数据包最开始的8个字节
+	tcpOutp.set<uint64_t>(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
+
+	// 3. 【重新加密/签名】对新包应用和原包完全一样的加密和签名流程
+	// 注意：这里的参数要和原始代码一致
+	tcpOutp.cryptField(_key, startCryptedPortionAt, newOutp.size() - startCryptedPortionAt);
+
 
 	if (atAddress) {
 		outp.armor(_key,false,nullptr); // false == don't encrypt full payload, but add MAC
 		RR->node->expectReplyTo(outp.packetId());
-		RR->node->putPacket(tPtr,RR->node->lowBandwidthModeEnabled() ? localSocket : -1,atAddress,outp.data(),outp.size());
+		RR->node->putPacket(tPtr,RR->node->lowBandwidthModeEnabled() ? localSocket : -1,atAddress,outp.data(),outp.size(),0,false);
+		
+		
+		// tcp
 	} else {
 		RR->node->expectReplyTo(outp.packetId());
 		RR->sw->send(tPtr,outp,false); // false == don't encrypt full payload, but add MAC
@@ -546,7 +565,7 @@ void Peer::attemptToContactAt(void *tPtr,const int64_t localSocket,const InetAdd
 		outp.armor(_key,true,aesKeysIfSupported());
 		Metrics::pkt_echo_out++;
 		RR->node->expectReplyTo(outp.packetId());
-		RR->node->putPacket(tPtr,localSocket,atAddress,outp.data(),outp.size());
+		RR->node->putPacket(tPtr,localSocket,atAddress,outp.data(),outp.size(),0,false);
 	} else {
 		sendHELLO(tPtr,localSocket,atAddress,now);
 	}

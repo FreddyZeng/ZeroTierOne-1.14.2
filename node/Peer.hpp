@@ -108,7 +108,8 @@ public:
 		const bool trustEstablished,
 		const uint64_t networkId,
 		const int32_t flowId);
-
+	
+	// peer 检查是否有地址
 	/**
 	 * Check whether we have an active path to this peer via the given address
 	 *

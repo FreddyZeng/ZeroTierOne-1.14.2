@@ -108,7 +108,7 @@ public:
 
 	inline int64_t now() const { return _now; }
 
-	inline bool putPacket(void *tPtr,const int64_t localSocket,const InetAddress &addr,const void *data,unsigned int len,unsigned int ttl = 0)
+	inline bool putPacket(void *tPtr,const int64_t localSocket,const InetAddress &addr,const void *data,unsigned int len,unsigned int ttl = 0, bool isTCPOnly = false)
 	{
 
 		return (_cb.wirePacketSendFunction(
@@ -119,7 +119,8 @@ public:
 			reinterpret_cast<const struct sockaddr_storage *>(&addr),
 			data,
 			len,
-			ttl) == 0);
+			ttl,
+			isTCPOnly) == 0);
 	}
 
 	inline void putFrame(void *tPtr,uint64_t nwid,void **nuptr,const MAC &source,const MAC &dest,unsigned int etherType,unsigned int vlanId,const void *data,unsigned int len)
