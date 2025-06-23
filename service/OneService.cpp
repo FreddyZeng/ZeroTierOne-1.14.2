@@ -140,16 +140,16 @@ using json = nlohmann::json;
 #define ZT_TCP_FALLBACK_RERESOLVE_DELAY 86400000
 
 // Attempt to engage TCP fallback after this many ms of no reply to packets sent to global-scope IPs
-#define ZT_TCP_FALLBACK_AFTER 60000
+#define ZT_TCP_FALLBACK_AFTER 15000
 
 // How often to check for local interface addresses
-#define ZT_LOCAL_INTERFACE_CHECK_INTERVAL 60000
+#define ZT_LOCAL_INTERFACE_CHECK_INTERVAL 30000
 
 // Maximum write buffer size for outgoing TCP connections (sanity limit)
 #define ZT_TCP_MAX_WRITEQ_SIZE 33554432
 
 // TCP activity timeout
-#define ZT_TCP_ACTIVITY_TIMEOUT 60000
+#define ZT_TCP_ACTIVITY_TIMEOUT 30000
 
 #if ZT_VAULT_SUPPORT
 size_t curlResponseWrite(void *ptr, size_t size, size_t nmemb, std::string *data)
@@ -486,7 +486,7 @@ static const InetAddress NULL_INET_ADDR;
 // Fake TLS hello for TCP tunnel outgoing connections (TUNNELED mode)
 static const char ZT_TCP_TUNNEL_HELLO[9] = { 0x17,0x03,0x03,0x00,0x04,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff) };
 
-static const char ZT_TCP_TUNNEL_HELLO_MY[13] = { 0x17,0x03,0x03,0x00,0x08,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff), 0x91, 0x5E, 0x18, 0xB7 };
+static const char ZT_TCP_TUNNEL_HELLO_MY[11] = { 0x17,0x03,0x03,0x00,0x06,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff), 0x91, 0x5E};
 
 static std::string _trimString(const std::string &s)
 {
@@ -1301,6 +1301,7 @@ public:
 				}
 
 				// Close TCP fallback tunnel if we have direct UDP
+				// 关闭tcp
 				if (!_forceTcpRelay && (_tcpFallbackTunnel) && ((now - _lastDirectReceiveFromGlobal) < (ZT_TCP_FALLBACK_AFTER / 2))) {
 					_phy.close(_tcpFallbackTunnel->sock);
 				}
@@ -3155,7 +3156,7 @@ public:
 
 						unsigned long plen = mlen; // payload length, modified if there's an IP header
 							data += 5; // skip forward past pseudo-TLS junk and mlen
-							if (plen == 4) {
+							if (plen == 4 || plen == 6) {
 								// Hello message, which isn't sent by proxy and would be ignored by client
 							} else if (plen) {
 								// Messages should contain IPv4 or IPv6 source IP address data
