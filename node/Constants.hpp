@@ -385,7 +385,7 @@
 /**
  * Delay between full-fledge pings of directly connected peers
  */
-#define ZT_PEER_PING_PERIOD 25000
+#define ZT_PEER_PING_PERIOD 15000
 
 /**
  * Paths are considered expired if they have not sent us a real packet in this long
@@ -509,9 +509,9 @@
  * Timeout for overall peer activity (measured from last receive)
  */
 #ifndef ZT_SDK
-#define ZT_PEER_ACTIVITY_TIMEOUT 500000
+#define ZT_PEER_ACTIVITY_TIMEOUT 40000
 #else
-#define ZT_PEER_ACTIVITY_TIMEOUT 30000
+#define ZT_PEER_ACTIVITY_TIMEOUT 20000
 #endif
 
 /**
@@ -565,12 +565,12 @@
 /**
  * Interval between direct path pushes in milliseconds
  */
-#define ZT_DIRECT_PATH_PUSH_INTERVAL 15000
+#define ZT_DIRECT_PATH_PUSH_INTERVAL 10000
 
 /**
  * Interval between direct path pushes in milliseconds if we already have a path
  */
-#define ZT_DIRECT_PATH_PUSH_INTERVAL_HAVEPATH 25000
+#define ZT_DIRECT_PATH_PUSH_INTERVAL_HAVEPATH 15000
 
 /**
  * Time horizon for push direct paths cutoff
