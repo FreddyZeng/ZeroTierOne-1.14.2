@@ -556,6 +556,7 @@ void Node::status(ZT_NodeStatus *status) const
 	status->online = _online ? 1 : 0;
 }
 
+
 ZT_PeerList *Node::peers() const
 {
 	std::vector< std::pair< Address,SharedPtr<Peer> > > peers(RR->topology->allPeers());

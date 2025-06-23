@@ -110,6 +110,7 @@ public:
 
 	inline bool putPacket(void *tPtr,const int64_t localSocket,const InetAddress &addr,const void *data,unsigned int len,unsigned int ttl = 0)
 	{
+
 		return (_cb.wirePacketSendFunction(
 			reinterpret_cast<ZT_Node *>(this),
 			_uPtr,
@@ -166,6 +167,7 @@ public:
 		return nw;
 	}
 
+	// d
 	inline std::vector<InetAddress> directPaths() const
 	{
 		Mutex::Lock _l(_directPaths_m);
