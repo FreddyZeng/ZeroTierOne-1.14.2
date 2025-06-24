@@ -411,7 +411,7 @@
  * This value is set at (16) so that given a normally-distributed RNG output
  * we will sample 1/16th (or ~6.25%) of packets.
  */
-#define ZT_QOS_ACK_DIVISOR 0x1
+#define ZT_QOS_ACK_DIVISOR 0x2
 
 /**
  * Time horizon for VERB_QOS_MEASUREMENT and VERB_ACK packet processing cutoff
