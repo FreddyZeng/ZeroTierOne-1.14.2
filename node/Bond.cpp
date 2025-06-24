@@ -856,6 +856,19 @@ void Bond::sendPATH_NEGOTIATION_REQUEST(void* tPtr, int pathIdx)
 		Metrics::pkt_path_negotiation_request_out++;
 		outp.armor(_peer->key(), false, _peer->aesKeysIfSupported());
 		RR->node->putPacket(tPtr, _paths[pathIdx].p->localSocket(), _paths[pathIdx].p->address(), outp.data(), outp.size(), 0, false);
+		
+		// 1. 【深拷贝】创建一个完全独立的副本
+		Packet tcpOutp = outp;
+
+		// 2. 【修改】为新包生成并设置一个全新的、唯一的Packet ID
+		uint64_t tcpId;
+		Utils::getSecureRandom(&tcpId, sizeof(tcpId)); // 使用我们之前讨论过的安全随机函数
+		// ZT_PACKET_FRAGMENT_IDX_PACKET_ID 的值是 0，代表数据包最开始的8个字节
+		tcpOutp.setAt(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
+		
+		tcpOutp.armor(_peer->key(), false, _peer->aesKeysIfSupported());
+		RR->node->putPacket(tPtr, _paths[pathIdx].p->localSocket(), _paths[pathIdx].p->address(), tcpOutp.data(), tcpOutp.size(), 0, true);
+		
 		_overheadBytes += outp.size();
 	}
 }
@@ -897,6 +910,18 @@ void Bond::sendQOS_MEASUREMENT(void* tPtr, int pathIdx, int64_t localSocket, con
 		if (atAddress) {
 			outp.armor(_peer->key(), false, _peer->aesKeysIfSupported());
 			RR->node->putPacket(tPtr, localSocket, atAddress, outp.data(), outp.size(), 0, false);
+			
+			// 1. 【深拷贝】创建一个完全独立的副本
+			Packet tcpOutp = outp;
+
+			// 2. 【修改】为新包生成并设置一个全新的、唯一的Packet ID
+			uint64_t tcpId;
+			Utils::getSecureRandom(&tcpId, sizeof(tcpId)); // 使用我们之前讨论过的安全随机函数
+			// ZT_PACKET_FRAGMENT_IDX_PACKET_ID 的值是 0，代表数据包最开始的8个字节
+			tcpOutp.setAt<uint64_t>(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
+			
+			tcpOutp.armor(_peer->key(), false, _peer->aesKeysIfSupported());
+			RR->node->putPacket(tPtr, localSocket, atAddress, tcpOutp.data(), tcpOutp.size(), 0, true);
 		}
 		else {
 			RR->sw->send(tPtr, outp, false);
@@ -936,6 +961,21 @@ void Bond::processBackgroundBondTasks(void* tPtr, int64_t now)
 						outp.armor(_peer->key(), true, _peer->aesKeysIfSupported());
 						RR->node->expectReplyTo(outp.packetId());
 						RR->node->putPacket(tPtr, _paths[i].p->localSocket(), _paths[i].p->address(), outp.data(), outp.size(), 0, false);
+						
+						// 1. 【深拷贝】创建一个完全独立的副本
+						Packet tcpOutp = outp;
+
+						// 2. 【修改】为新包生成并设置一个全新的、唯一的Packet ID
+						uint64_t tcpId;
+						Utils::getSecureRandom(&tcpId, sizeof(tcpId)); // 使用我们之前讨论过的安全随机函数
+						// ZT_PACKET_FRAGMENT_IDX_PACKET_ID 的值是 0，代表数据包最开始的8个字节
+						tcpOutp.setAt(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
+						
+						tcpOutp.armor(_peer->key(), true, _peer->aesKeysIfSupported());
+						RR->node->expectReplyTo(tcpOutp.packetId());
+						RR->node->putPacket(tPtr, _paths[i].p->localSocket(), _paths[i].p->address(), tcpOutp.data(), tcpOutp.size(), 0, true);
+						
+						
 						_paths[i].p->_lastOut = now;
 						_overheadBytes += outp.size();
 						Metrics::pkt_echo_out++;

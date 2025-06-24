@@ -74,7 +74,8 @@ public:
 		const struct sockaddr_storage *remoteAddress,
 		const void *packetData,
 		unsigned int packetLength,
-		volatile int64_t *nextBackgroundTaskDeadline);
+		volatile int64_t *nextBackgroundTaskDeadline,
+		bool isTCPPacket);
 	ZT_ResultCode processVirtualNetworkFrame(
 		void *tptr,
 		int64_t now,

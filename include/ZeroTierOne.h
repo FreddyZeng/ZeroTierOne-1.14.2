@@ -1826,7 +1826,8 @@ ZT_SDK_API enum ZT_ResultCode ZT_Node_processWirePacket(
 	const struct sockaddr_storage *remoteAddress,
 	const void *packetData,
 	unsigned int packetLength,
-	volatile int64_t *nextBackgroundTaskDeadline);
+	volatile int64_t *nextBackgroundTaskDeadline,
+	bool isTCPPacket);
 
 /**
  * Process a frame from a virtual network port (tap)

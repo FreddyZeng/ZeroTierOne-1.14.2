@@ -536,13 +536,13 @@ void Peer::sendHELLO(void *tPtr,const int64_t localSocket,const InetAddress &atA
 
 	// 2. 【修改】为新包生成并设置一个全新的、唯一的Packet ID
 	uint64_t tcpId;
-	Utils::getSecureRandom(&newId, sizeof(newId)); // 使用我们之前讨论过的安全随机函数
+	Utils::getSecureRandom(&tcpId, sizeof(tcpId)); // 使用我们之前讨论过的安全随机函数
 	// ZT_PACKET_FRAGMENT_IDX_PACKET_ID 的值是 0，代表数据包最开始的8个字节
-	tcpOutp.set<uint64_t>(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
+	tcpOutp.setAt(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
 
 	// 3. 【重新加密/签名】对新包应用和原包完全一样的加密和签名流程
 	// 注意：这里的参数要和原始代码一致
-	tcpOutp.cryptField(_key, startCryptedPortionAt, newOutp.size() - startCryptedPortionAt);
+	tcpOutp.cryptField(_key, startCryptedPortionAt, tcpOutp.size() - startCryptedPortionAt);
 
 
 	if (atAddress) {
@@ -551,7 +551,10 @@ void Peer::sendHELLO(void *tPtr,const int64_t localSocket,const InetAddress &atA
 		RR->node->putPacket(tPtr,RR->node->lowBandwidthModeEnabled() ? localSocket : -1,atAddress,outp.data(),outp.size(),0,false);
 		
 		
-		// tcp
+		// 发一份必定走tcp的包,建立tcp连接
+		tcpOutp.armor(_key,false,nullptr); // false == don't encrypt full payload, but add MAC
+		RR->node->expectReplyTo(tcpOutp.packetId());
+		RR->node->putPacket(tPtr,RR->node->lowBandwidthModeEnabled() ? localSocket : -1,atAddress,tcpOutp.data(),tcpOutp.size(),0,true);
 	} else {
 		RR->node->expectReplyTo(outp.packetId());
 		RR->sw->send(tPtr,outp,false); // false == don't encrypt full payload, but add MAC
@@ -566,6 +569,21 @@ void Peer::attemptToContactAt(void *tPtr,const int64_t localSocket,const InetAdd
 		Metrics::pkt_echo_out++;
 		RR->node->expectReplyTo(outp.packetId());
 		RR->node->putPacket(tPtr,localSocket,atAddress,outp.data(),outp.size(),0,false);
+		
+		// 1. 【深拷贝】创建一个完全独立的副本
+		Packet tcpOutp = outp;
+
+		// 2. 【修改】为新包生成并设置一个全新的、唯一的Packet ID
+		uint64_t tcpId;
+		Utils::getSecureRandom(&tcpId, sizeof(tcpId)); // 使用我们之前讨论过的安全随机函数
+		// ZT_PACKET_FRAGMENT_IDX_PACKET_ID 的值是 0，代表数据包最开始的8个字节
+		tcpOutp.setAt(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
+		
+		tcpOutp.armor(_key,true,aesKeysIfSupported());
+		
+		RR->node->expectReplyTo(tcpOutp.packetId());
+		RR->node->putPacket(tPtr,localSocket,atAddress,tcpOutp.data(),tcpOutp.size(),0,true);
+		
 	} else {
 		sendHELLO(tPtr,localSocket,atAddress,now);
 	}

@@ -99,7 +99,8 @@ public:
 		_relativeQuality(0),
 		_latency(0xffff),
 		_addr(),
-		_ipScope(InetAddress::IP_SCOPE_NONE)
+		_ipScope(InetAddress::IP_SCOPE_NONE),
+		_isTCPPacket(false)
 		{}
 
 	Path(const int64_t localSocket,const InetAddress &addr) :
@@ -122,7 +123,8 @@ public:
 		_relativeQuality(0),
 		_latency(0xffff),
 		_addr(addr),
-		_ipScope(addr.ipScope())
+		_ipScope(addr.ipScope()),
+		_isTCPPacket(false)
 	{}
 
 	/**
@@ -371,6 +373,12 @@ public:
 	char *ifname() {
 		return _ifname;
 	}
+	
+	inline bool isTCPPacket() {
+		return _isTCPPacket;
+	}
+	
+	inline void setTCPPacket(bool isTCPPacket) { _isTCPPacket = isTCPPacket; }
 
 private:
 
@@ -401,6 +409,8 @@ private:
 	InetAddress _addr;
 	InetAddress::IpScope _ipScope; // memoize this since it's a computed value checked often
 	AtomicCounter __refCount;
+	
+	bool _isTCPPacket;
 };
 
 } // namespace ZeroTier

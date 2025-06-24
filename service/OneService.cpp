@@ -47,6 +47,7 @@
 #include "../node/Bond.hpp"
 #include "../node/Peer.hpp"
 #include "../node/PacketMultiplexer.hpp"
+#include "../node/Topology.hpp"
 
 #include "../osdep/Phy.hpp"
 #include "../osdep/OSUtils.hpp"
@@ -486,7 +487,7 @@ static const InetAddress NULL_INET_ADDR;
 // Fake TLS hello for TCP tunnel outgoing connections (TUNNELED mode)
 static const char ZT_TCP_TUNNEL_HELLO[9] = { 0x17,0x03,0x03,0x00,0x04,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff) };
 
-static const char ZT_TCP_TUNNEL_HELLO_MY[11] = { 0x17,0x03,0x03,0x00,0x06,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff), 0x91, 0x5E};
+static const char ZT_TCP_TUNNEL_HELLO_MY[11] = { 0x17,0x03,0x03,0x00,0x06,(char)ZEROTIER_ONE_VERSION_MAJOR,(char)ZEROTIER_ONE_VERSION_MINOR,(char)((ZEROTIER_ONE_VERSION_REVISION >> 8) & 0xff),(char)(ZEROTIER_ONE_VERSION_REVISION & 0xff), '\x91', '\x5E'};
 
 static std::string _trimString(const std::string &s)
 {
@@ -3040,7 +3041,8 @@ public:
 		if ((len >= 16) && (reinterpret_cast<const InetAddress*>(from)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
 			_lastDirectReceiveFromGlobal = now;
 		}
-		const ZT_ResultCode rc = _node->processWirePacket(nullptr,now,reinterpret_cast<int64_t>(sock),reinterpret_cast<const struct sockaddr_storage *>(from),data,len,&_nextBackgroundTaskDeadline);
+		// 来自udp的数据包
+		const ZT_ResultCode rc = _node->processWirePacket(nullptr,now,reinterpret_cast<int64_t>(sock),reinterpret_cast<const struct sockaddr_storage *>(from),data,len,&_nextBackgroundTaskDeadline,false);
 		if (ZT_ResultCode_isFatal(rc)) {
 			char tmp[256];
 			OSUtils::ztsnprintf(tmp,sizeof(tmp),"fatal error code from processWirePacket: %d",(int)rc);
@@ -3192,6 +3194,7 @@ public:
 
 								if (from) {
 									InetAddress fakeTcpLocalInterfaceAddress((uint32_t)0xffffffff,0xffff);
+									// 记录来自tcp的地址
 									const ZT_ResultCode rc = _node->processWirePacket(
 										(void *)0,
 										OSUtils::now(),
@@ -3199,7 +3202,8 @@ public:
 										reinterpret_cast<struct sockaddr_storage *>(&from),
 										data,
 										plen,
-										&_nextBackgroundTaskDeadline);
+										&_nextBackgroundTaskDeadline,
+										true);
 									if (ZT_ResultCode_isFatal(rc)) {
 										char tmp[256];
 										OSUtils::ztsnprintf(tmp,sizeof(tmp),"fatal error code from processWirePacket: %d",(int)rc);
@@ -3709,16 +3713,25 @@ public:
 
 	inline int nodeWirePacketSendFunction(const int64_t localSocket,const struct sockaddr_storage *addr,const void *data,unsigned int len,unsigned int ttl,bool isTCPOnly)
 	{
+		bool isTCPPath = false;
+		
 #ifdef ZT_TCP_FALLBACK_RELAY
 		if(_allowTcpFallbackRelay) {
 			if (addr->ss_family == AF_INET) {
+								
+				const InetAddress *inetAddrPtr = reinterpret_cast<const InetAddress *>(addr);
+
+				const SharedPtr<Path> path(_node->RR->topology->getPath(localSocket,inetAddrPtr));
+				
+				isTCPPath = path->isTCPPacket();
+				
 				// TCP fallback tunnel support, currently IPv4 only
 				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
 					// Engage TCP tunnel fallback if we haven't received anything valid from a global
 					// IP address in ZT_TCP_FALLBACK_AFTER milliseconds. If we do start getting
 					// valid direct traffic we'll stop using it and close the socket after a while.
 					const int64_t now = OSUtils::now();
-					if (isTCPOnly || _forceTcpRelay || (((now - _lastDirectReceiveFromGlobal) > ZT_TCP_FALLBACK_AFTER)&&((now - _lastRestart) > ZT_TCP_FALLBACK_AFTER))) {
+					if (isTCPPath || isTCPOnly || _forceTcpRelay) {
 						if (_tcpFallbackTunnel) {
 							bool flushNow = false;
 							{
@@ -3744,7 +3757,7 @@ public:
 								void *tmpptr = (void *)_tcpFallbackTunnel;
 								phyOnTcpWritable(_tcpFallbackTunnel->sock,&tmpptr);
 							}
-						} else if (isTCPOnly || _forceTcpRelay || (((now - _lastSendToGlobalV4) < ZT_TCP_FALLBACK_AFTER)&&((now - _lastSendToGlobalV4) > (ZT_PING_CHECK_INTERVAL / 2)))) {
+						} else if (isTCPPath || isTCPOnly || _forceTcpRelay) {
 							const InetAddress addr(_fallbackRelayAddress);
 							TcpConnection *tc = new TcpConnection();
 							{
@@ -3765,7 +3778,7 @@ public:
 				}
 			}
 		}
-		if (isTCPOnly || _forceTcpRelay) {
+		if (isTCPPath || isTCPOnly || _forceTcpRelay) {
 			// Shortcut here so that we don't emit any UDP packets
 			return 0;
 		}

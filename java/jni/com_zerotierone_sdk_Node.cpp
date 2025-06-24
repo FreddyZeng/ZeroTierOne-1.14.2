@@ -1093,7 +1093,8 @@ JNIEXPORT jobject JNICALL Java_com_zerotier_sdk_Node_processWirePacket(
         &remoteAddress,
         localData,
         packetLength,
-        &nextBackgroundTaskDeadline);
+        &nextBackgroundTaskDeadline,
+		false);
     if (env->ExceptionCheck()) {
         LOGE("Exception calling ZT_Node_processWirePacket");
         free(localData);
