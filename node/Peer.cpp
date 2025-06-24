@@ -201,8 +201,8 @@ void Peer::received(
 						break;
 					}
 					// If same address on same interface then don't learn unless existing path isn't alive (prevents learning loop)
-					if (_paths[i].p->address().ipsEqual(path->address()) && _paths[i].p->localSocket() == path->localSocket()) {
-						if (_paths[i].p->alive(now) && !_bond) {
+					if (!_paths[i].p->isTCPPacket() && _paths[i].p->address().ipsEqual(path->address()) && _paths[i].p->localSocket() == path->localSocket()) {
+						if (!_paths[i].p->isTCPPacket() && _paths[i].p->alive(now) && !_bond) {
 							havePath = true;
 							break;
 						}
@@ -343,12 +343,16 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 	if(_bond && _bond->isReady()) {
 		return _bond->getAppropriatePath(now, flowId);
 	}
+	
+	unsigned int bestUDPPath = ZT_MAX_PEER_NETWORK_PATHS;
+	
 	unsigned int bestPath = ZT_MAX_PEER_NETWORK_PATHS;
 	/**
 	 * Send traffic across the highest quality path only. This algorithm will still
 	 * use the old path quality metric from protocol version 9.
 	 */
 	long bestPathQuality = 2147483647;
+	
 	for(unsigned int i=0;i<ZT_MAX_PEER_NETWORK_PATHS;++i) {
 		if (_paths[i].p) {
 			if ((includeExpired)||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
@@ -362,6 +366,26 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 			break;
 		}
 	}
+	
+	bestPathQuality = 2147483647;
+	for(unsigned int i=0;i<ZT_MAX_PEER_NETWORK_PATHS;++i) {
+		if (_paths[i].p) {
+			if ((includeExpired)||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
+				const long q = _paths[i].p->quality(now) / _paths[i].priority;
+				if (q <= bestPathQuality && !_paths[i].p->isTCPPacket()) {
+					bestPathQuality = q;
+					bestUDPPath = i;
+				}
+			}
+		} else {
+			break;
+		}
+	}
+	
+	if (bestUDPPath != ZT_MAX_PEER_NETWORK_PATHS) {
+		return _paths[bestUDPPath].p;
+	}
+	
 	if (bestPath != ZT_MAX_PEER_NETWORK_PATHS) {
 		return _paths[bestPath].p;
 	}
