@@ -45,7 +45,7 @@
 
 #include "../node/Metrics.hpp"
 
-#define ZT_TCP_PROXY_CONNECTION_TIMEOUT_SECONDS 60
+#define ZT_TCP_PROXY_CONNECTION_TIMEOUT_SECONDS 30
 #define ZT_TCP_PROXY_TCP_PORT 58443
 
 using namespace ZeroTier;
@@ -307,9 +307,9 @@ int main(int argc,char **argv)
 
 	time_t lastDidHousekeeping = time((time_t *)0);
 	for(;;) {
-		phy.poll(120000);
+		phy.poll(30000);
 		time_t now = time((time_t *)0);
-		if ((now - lastDidHousekeeping) > 120) {
+		if ((now - lastDidHousekeeping) > 30) {
 			lastDidHousekeeping = now;
 			svc.doHousekeeping();
 		}

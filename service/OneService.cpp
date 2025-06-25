@@ -144,13 +144,13 @@ using json = nlohmann::json;
 #define ZT_TCP_FALLBACK_AFTER 15000
 
 // How often to check for local interface addresses
-#define ZT_LOCAL_INTERFACE_CHECK_INTERVAL 30000
+#define ZT_LOCAL_INTERFACE_CHECK_INTERVAL 15000
 
 // Maximum write buffer size for outgoing TCP connections (sanity limit)
 #define ZT_TCP_MAX_WRITEQ_SIZE 33554432
 
 // TCP activity timeout
-#define ZT_TCP_ACTIVITY_TIMEOUT 30000
+#define ZT_TCP_ACTIVITY_TIMEOUT 15000
 
 #if ZT_VAULT_SUPPORT
 size_t curlResponseWrite(void *ptr, size_t size, size_t nmemb, std::string *data)
