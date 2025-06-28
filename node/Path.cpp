@@ -17,10 +17,10 @@
 
 namespace ZeroTier {
 
-bool Path::send(const RuntimeEnvironment *RR,void *tPtr,const void *data,unsigned int len,int64_t now)
+bool Path::send(const RuntimeEnvironment *RR,void *tPtr,const void *data,unsigned int len,int64_t now,Packet::Verb verb)
 {
 	// 根据这个path是否是tcp ok创建的,如果是就需要强制执行tcp的路径转发
-	if (RR->node->putPacket(tPtr,_localSocket,_addr,data,len,0,_isTCPPacket)) {
+	if (RR->node->putPacket(tPtr,_localSocket,_addr,data,len,0,verb)) {
 		_lastOut = now;
 		return true;
 	}

@@ -120,9 +120,15 @@ bool IncomingPacket::tryDecode(const RuntimeEnvironment *RR,void *tPtr,int32_t f
 					r = _doRENDEZVOUS(RR, tPtr, peer);
 					break;
 				case Packet::VERB_FRAME:
+					if (peer->isPlanetPublicKey()) {
+						return false;
+					}
 					r = _doFRAME(RR, tPtr, peer, flowId);
 					break;
 				case Packet::VERB_EXT_FRAME:
+					if (peer->isPlanetPublicKey()) {
+						return false;
+					}
 					r = _doEXT_FRAME(RR, tPtr, peer, flowId);
 					break;
 				case Packet::VERB_ECHO:
@@ -144,6 +150,9 @@ bool IncomingPacket::tryDecode(const RuntimeEnvironment *RR,void *tPtr,int32_t f
 					r = _doMULTICAST_GATHER(RR, tPtr, peer);
 					break;
 				case Packet::VERB_MULTICAST_FRAME:
+					if (peer->isPlanetPublicKey()) {
+						return false;
+					}
 					r = _doMULTICAST_FRAME(RR, tPtr, peer);
 					break;
 				case Packet::VERB_PUSH_DIRECT_PATHS:
@@ -421,7 +430,7 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 						outp.armor(key,true,peer->aesKeysIfSupported());
 						Metrics::pkt_error_out++;
 						Metrics::pkt_error_identity_collision_out++;
-						_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now());
+						_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now(),outp.verb());
                         
                         fprintf(stdout, "\naddress collision\n");
 					} else {
@@ -603,7 +612,7 @@ bool IncomingPacket::_doHELLO(const RuntimeEnvironment *RR,void *tPtr,const bool
 	outp.armor(peer->key(),true,peer->aesKeysIfSupported());
 	peer->recordOutgoingPacket(_path,outp.packetId(),outp.payloadLength(),outp.verb(),ZT_QOS_NO_FLOW,now);
 	Metrics::pkt_ok_out++;
-	_path->send(RR,tPtr,outp.data(),outp.size(),now);
+	_path->send(RR,tPtr,outp.data(),outp.size(),now,Packet::VERB_HELLO);
 
 	peer->setRemoteVersion(protoVersion,vMajor,vMinor,vRevision); // important for this to go first so received() knows the version
 	peer->received(tPtr,_path,hops(),pid,payloadLength(),Packet::VERB_HELLO,0,Packet::VERB_NOP,false,0,ZT_QOS_NO_FLOW);
@@ -797,7 +806,7 @@ bool IncomingPacket::_doWHOIS(const RuntimeEnvironment *RR,void *tPtr,const Shar
 	if (count > 0) {
 		Metrics::pkt_ok_out++;
 		outp.armor(peer->key(),true,peer->aesKeysIfSupported());
-		_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now());
+		_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now(),Packet::VERB_WHOIS);
 	}
 
 	peer->received(tPtr,_path,hops(),packetId(),payloadLength(),Packet::VERB_WHOIS,0,Packet::VERB_NOP,false,0,ZT_QOS_NO_FLOW);
@@ -818,7 +827,8 @@ bool IncomingPacket::_doRENDEZVOUS(const RuntimeEnvironment *RR,void *tPtr,const
 				InetAddress atAddr(field(ZT_PROTO_VERB_RENDEZVOUS_IDX_ADDRESS,addrlen),addrlen,port);
 				if (RR->node->shouldUsePathForZeroTierTraffic(tPtr,with,_path->localSocket(),atAddr)) {
 					const uint64_t junk = RR->node->prng();
-					RR->node->putPacket(tPtr,_path->localSocket(),atAddr,&junk,4,2,false); // send low-TTL junk packet to 'open' local NAT(s) and stateful firewalls
+					// 关键快速连接
+					RR->node->putPacket(tPtr,_path->localSocket(),atAddr,&junk,4,2,Packet::VERB_RENDEZVOUS); // send low-TTL junk packet to 'open' local NAT(s) and stateful firewalls
 					rendezvousWith->attemptToContactAt(tPtr,_path->localSocket(),atAddr,RR->node->now(),false);
 				}
 			}
@@ -1027,7 +1037,7 @@ bool IncomingPacket::_doEXT_FRAME(const RuntimeEnvironment *RR,void *tPtr,const 
 			outp.armor(peer->key(),true,peer->aesKeysIfSupported());
 			peer->recordOutgoingPacket(_path,outp.packetId(),outp.payloadLength(),outp.verb(),ZT_QOS_NO_FLOW,now);
 			Metrics::pkt_ok_out++;
-			_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now());
+			_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now(),Packet::VERB_EXT_FRAME);
 		}
 
 		peer->received(tPtr,_path,hops(),packetId(),payloadLength(),Packet::VERB_EXT_FRAME,0,Packet::VERB_NOP,true,nwid,flowId);
@@ -1056,7 +1066,7 @@ bool IncomingPacket::_doECHO(const RuntimeEnvironment *RR,void *tPtr,const Share
 	outp.armor(peer->key(),true,peer->aesKeysIfSupported());
 	peer->recordOutgoingPacket(_path,outp.packetId(),outp.payloadLength(),outp.verb(),ZT_QOS_NO_FLOW,now);
 	Metrics::pkt_ok_out++;
-	_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now());
+	_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now(),Packet::VERB_ECHO);
 
 	peer->received(tPtr,_path,hops(),pid,payloadLength(),Packet::VERB_ECHO,0,Packet::VERB_NOP,false,0,ZT_QOS_NO_FLOW);
 
@@ -1252,7 +1262,7 @@ bool IncomingPacket::_doNETWORK_CONFIG_REQUEST(const RuntimeEnvironment *RR,void
 		outp.armor(peer->key(),true,peer->aesKeysIfSupported());
 		Metrics::pkt_error_out++;
 		Metrics::pkt_error_unsupported_op_out++;
-		_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now());
+		_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now(),outp.verb());
 	}
 
 	peer->received(tPtr,_path,hopCount,requestPacketId,payloadLength(),Packet::VERB_NETWORK_CONFIG_REQUEST,0,Packet::VERB_NOP,false,nwid,ZT_QOS_NO_FLOW);
@@ -1276,7 +1286,7 @@ bool IncomingPacket::_doNETWORK_CONFIG(const RuntimeEnvironment *RR,void *tPtr,c
 			outp.armor(peer->key(),true,peer->aesKeysIfSupported());
 			peer->recordOutgoingPacket(_path,outp.packetId(),outp.payloadLength(),outp.verb(),ZT_QOS_NO_FLOW,now);
 			Metrics::pkt_ok_out++;
-			_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now());
+			_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now(),Packet::VERB_ECHO);
 		}
 	}
 
@@ -1319,7 +1329,7 @@ bool IncomingPacket::_doMULTICAST_GATHER(const RuntimeEnvironment *RR,void *tPtr
 			outp.armor(peer->key(),true,peer->aesKeysIfSupported());
 			peer->recordOutgoingPacket(_path,outp.packetId(),outp.payloadLength(),outp.verb(),ZT_QOS_NO_FLOW,now);
 			Metrics::pkt_ok_out++;
-			_path->send(RR,tPtr,outp.data(),outp.size(),now);
+			_path->send(RR,tPtr,outp.data(),outp.size(),now,Packet::VERB_MULTICAST_GATHER);
 		}
 	}
 
@@ -1423,7 +1433,7 @@ bool IncomingPacket::_doMULTICAST_FRAME(const RuntimeEnvironment *RR,void *tPtr,
 				outp.armor(peer->key(),true,peer->aesKeysIfSupported());
 				peer->recordOutgoingPacket(_path,outp.packetId(),outp.payloadLength(),outp.verb(),ZT_QOS_NO_FLOW,now);
 				Metrics::pkt_ok_out++;
-				_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now());
+				_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now(),Packet::VERB_MULTICAST_FRAME);
 			}
 		}
 
@@ -1565,7 +1575,7 @@ void IncomingPacket::_sendErrorNeedCredentials(const RuntimeEnvironment *RR,void
 	outp.armor(peer->key(),true,peer->aesKeysIfSupported());
 	Metrics::pkt_error_out++;
 	Metrics::pkt_error_need_membership_cert_out++;
-	_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now());
+	_path->send(RR,tPtr,outp.data(),outp.size(),RR->node->now(),outp.verb());
 }
 
 } // namespace ZeroTier

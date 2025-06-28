@@ -82,8 +82,17 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 
 		// 记录来自udp的包和tcp的包
 		const SharedPtr<Path> path(RR->topology->getPath(localSocket,fromAddr));
+		
+		bool needIntroduce = false;
+		
+		if (path->latency() == 0xffff || path->alive(now) == false) {
+			// 第一次路径接受到数据, 或者不活跃了
+			needIntroduce = true;
+		}
+		
+		path->setTCPPacket(isTCPPacket);
+		
 		path->received(now);
-		path->setTCPPacket(isTCPPacket); // 写入类型
 
 		if (len == 13) {
 			/* LEGACY: before VERB_PUSH_DIRECT_PATHS, peers used broadcast
@@ -105,7 +114,7 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 					Packet outp(peer->address(),RR->identity.address(),Packet::VERB_NOP);
 					outp.armor(peer->key(),true,peer->aesKeysIfSupported());
 					Metrics::pkt_nop_out++;
-					path->send(RR,tPtr,outp.data(),outp.size(),now);
+					path->send(RR,tPtr,outp.data(),outp.size(),now,outp.verb());
 				}
 			}
 
@@ -121,7 +130,7 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 						return;
 					}
 
-					if (fragment.hops() < ZT_RELAY_MAX_HOPS) {
+					if (fragment.hops() < ZT_RELAY_MAX_HOPS || needIntroduce) {
 						fragment.incrementHops();
 
 						// Note: we don't bother initiating NAT-t for fragments, since heads will set that off.
@@ -200,7 +209,7 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 
 					Packet packet(data,len);
 
-					if (packet.hops() < ZT_RELAY_MAX_HOPS) {
+					if (packet.hops() < ZT_RELAY_MAX_HOPS || needIntroduce) {
 						packet.incrementHops();
 						SharedPtr<Peer> relayTo = RR->topology->getPeer(tPtr,destination);
 						if ((relayTo)&&(relayTo->sendDirect(tPtr,packet.data(),packet.size(),now,false))) {
@@ -1154,7 +1163,7 @@ void Switch::_sendViaSpecificPath(void *tPtr,SharedPtr<Peer> peer,SharedPtr<Path
 
 	peer->recordOutgoingPacket(viaPath, packet.packetId(), packet.payloadLength(), packet.verb(), flowId, now);
 
-	if (viaPath->send(RR,tPtr,packet.data(),chunkSize,now)) {
+	if (viaPath->send(RR,tPtr,packet.data(),chunkSize,now,packet.verb())) {
 		if (chunkSize < packet.size()) {
 			// Too big for one packet, fragment the rest
 			unsigned int fragStart = chunkSize;
@@ -1168,7 +1177,7 @@ void Switch::_sendViaSpecificPath(void *tPtr,SharedPtr<Peer> peer,SharedPtr<Path
 			for(unsigned int fno=1;fno<totalFragments;++fno) {
 				chunkSize = std::min(remaining,(unsigned int)(mtu - ZT_PROTO_MIN_FRAGMENT_LENGTH));
 				Packet::Fragment frag(packet,fragStart,chunkSize,fno,totalFragments);
-				viaPath->send(RR,tPtr,frag.data(),frag.size(),now);
+				viaPath->send(RR,tPtr,frag.data(),frag.size(),now,packet.verb());
 				fragStart += chunkSize;
 				remaining -= chunkSize;
 			}

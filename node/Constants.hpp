@@ -301,7 +301,7 @@
 /**
  * Size of RX queue
  */
-#define ZT_RX_QUEUE_SIZE 32
+#define ZT_RX_QUEUE_SIZE 64
 
 /**
  * Size of TX queue
@@ -348,7 +348,7 @@
 /**
  * Period for multicast LIKE announcements
  */
-#define ZT_MULTICAST_ANNOUNCE_PERIOD 60000
+#define ZT_MULTICAST_ANNOUNCE_PERIOD 5000
 
 /**
  * Delay between explicit MULTICAST_GATHER requests for a given multicast channel
@@ -370,7 +370,7 @@
 /**
  * How often the local.conf file is checked for changes (service, should be moved there)
  */
-#define ZT_LOCAL_CONF_FILE_CHECK_INTERVAL 10000
+#define ZT_LOCAL_CONF_FILE_CHECK_INTERVAL 5000
 
 /**
  * How frequently to send heartbeats over in-use paths
@@ -509,9 +509,9 @@
  * Timeout for overall peer activity (measured from last receive)
  */
 #ifndef ZT_SDK
-#define ZT_PEER_ACTIVITY_TIMEOUT 40000
-#else
 #define ZT_PEER_ACTIVITY_TIMEOUT 20000
+#else
+#define ZT_PEER_ACTIVITY_TIMEOUT 10000
 #endif
 
 /**
@@ -530,7 +530,7 @@
  * Don't lengthen this as it affects things like QoS / uptime monitoring
  * via ZeroTier Central. This is the heartbeat, basically.
  */
-#define ZT_NETWORK_AUTOCONF_DELAY 60000
+#define ZT_NETWORK_AUTOCONF_DELAY 5000
 
 /**
  * Minimum interval between attempts by relays to unite peers
@@ -539,12 +539,12 @@
  * a RENDEZVOUS message no more than this often. This instructs the peers
  * to attempt NAT-t and gives each the other's corresponding IP:port pair.
  */
-#define ZT_MIN_UNITE_INTERVAL 30000
+#define ZT_MIN_UNITE_INTERVAL 2000
 
 /**
  * How often should peers try memorized or statically defined paths?
  */
-#define ZT_TRY_MEMORIZED_PATH_INTERVAL 30000
+#define ZT_TRY_MEMORIZED_PATH_INTERVAL 5000
 
 /**
  * Sanity limit on maximum bridge routes
@@ -565,17 +565,17 @@
 /**
  * Interval between direct path pushes in milliseconds
  */
-#define ZT_DIRECT_PATH_PUSH_INTERVAL 10000
+#define ZT_DIRECT_PATH_PUSH_INTERVAL 2000
 
 /**
  * Interval between direct path pushes in milliseconds if we already have a path
  */
-#define ZT_DIRECT_PATH_PUSH_INTERVAL_HAVEPATH 15000
+#define ZT_DIRECT_PATH_PUSH_INTERVAL_HAVEPATH 5000
 
 /**
  * Time horizon for push direct paths cutoff
  */
-#define ZT_PUSH_DIRECT_PATHS_CUTOFF_TIME 30000
+#define ZT_PUSH_DIRECT_PATHS_CUTOFF_TIME 3000
 
 /**
  * Drainage constants for VERB_ECHO rate-limiters
@@ -605,7 +605,7 @@
  * per CUTOFF_TIME milliseconds per peer to prevent this from being
  * useful for DOS amplification attacks.
  */
-#define ZT_PUSH_DIRECT_PATHS_CUTOFF_LIMIT 8
+#define ZT_PUSH_DIRECT_PATHS_CUTOFF_LIMIT 3
 
 /**
  * Maximum number of paths per IP scope (e.g. global, link-local) and family (e.g. v4/v6)

@@ -29,7 +29,7 @@
 #include "Trace.hpp"
 
 // Entry timeout -- make it fairly long since this is just to prevent stale buildup
-#define ZT_SELFAWARENESS_ENTRY_TIMEOUT 600000
+#define ZT_SELFAWARENESS_ENTRY_TIMEOUT 330000
 
 namespace ZeroTier {
 

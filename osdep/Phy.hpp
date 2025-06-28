@@ -148,6 +148,7 @@ private:
 		void *uptr; // user-settable pointer
 		uint16_t localPort;
 		ZT_PHY_SOCKADDR_STORAGE_TYPE saddr; // remote for TCP_OUT and TCP_IN, local for TCP_LISTEN, RAW, and UDP
+		bool isTCPRelay;
 	};
 
 	std::list<PhySocketImpl> _socks;
@@ -243,6 +244,15 @@ public:
 	static inline void** getuptr(PhySocket* s) throw()
 	{
 		return &(reinterpret_cast<PhySocketImpl*>(s)->uptr);
+	}
+	
+	static inline bool isTCPRelay(PhySocket* s) throw()
+	{
+		return reinterpret_cast<PhySocketImpl*>(s)->isTCPRelay;
+	}
+	static inline void setTCPRelay(PhySocket* s, bool isTCPRelay) throw()
+	{
+		reinterpret_cast<PhySocketImpl*>(s)->isTCPRelay = isTCPRelay;
 	}
 
 	/**

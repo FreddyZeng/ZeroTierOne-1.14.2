@@ -152,7 +152,7 @@ public:
 	 * @param now Current time
 	 * @return True if transport reported success
 	 */
-	bool send(const RuntimeEnvironment *RR,void *tPtr,const void *data,unsigned int len,int64_t now);
+	bool send(const RuntimeEnvironment *RR,void *tPtr,const void *data,unsigned int len,int64_t now,Packet::Verb verb);
 
 	/**
 	 * Manually update last sent time

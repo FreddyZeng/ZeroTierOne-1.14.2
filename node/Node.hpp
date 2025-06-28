@@ -38,6 +38,7 @@
 #include "Bond.hpp"
 #include "SelfAwareness.hpp"
 #include "C25519.hpp"
+#include "Packet.hpp"
 
 // Bit mask for "expecting reply" hash
 #define ZT_EXPECTING_REPLIES_BUCKET_MASK1 255
@@ -109,7 +110,7 @@ public:
 
 	inline int64_t now() const { return _now; }
 
-	inline bool putPacket(void *tPtr,const int64_t localSocket,const InetAddress &addr,const void *data,unsigned int len,unsigned int ttl = 0, bool isTCPOnly = false)
+	inline bool putPacket(void *tPtr,const int64_t localSocket,const InetAddress &addr,const void *data,unsigned int len,unsigned int ttl,Packet::Verb verb)
 	{
 
 		return (_cb.wirePacketSendFunction(
@@ -121,7 +122,7 @@ public:
 			data,
 			len,
 			ttl,
-			isTCPOnly) == 0);
+			verb) == 0);
 	}
 
 	inline void putFrame(void *tPtr,uint64_t nwid,void **nuptr,const MAC &source,const MAC &dest,unsigned int etherType,unsigned int vlanId,const void *data,unsigned int len)
@@ -349,6 +350,8 @@ public:
 	volatile int64_t _prngState[2];
 	bool _online;
 	bool _lowBandwidthMode;
+	
+	int64_t _directPathCount;
 };
 
 } // namespace ZeroTier

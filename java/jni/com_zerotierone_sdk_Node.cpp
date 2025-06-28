@@ -593,7 +593,7 @@ namespace {
         const void *buffer,
         unsigned int bufferSize,
         unsigned int ttl,
-		bool isTCPOnly)
+		Packet::Verb verb)
     {
         LOGV("WirePacketSendFunction(%" PRId64 ", %p, %p, %u, %u)", localSocket, remoteAddress, buffer, bufferSize, ttl);
         JniRef *ref = (JniRef*)userData;

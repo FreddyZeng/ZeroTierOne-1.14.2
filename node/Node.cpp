@@ -267,7 +267,7 @@ public:
 			ZT_PeerRole role = RR->topology->role(p->address());
 
 			// Contact upstream peers as infrequently as possible
-			int roleBasedTimerScale = (role == ZT_PEER_ROLE_LEAF) ? 2 : 16;
+			int roleBasedTimerScale = (role == ZT_PEER_ROLE_LEAF) ? 2 : 5;
 
 			// Unless we don't any have paths to the roots, then we shouldn't wait a long time to contact them
 			bool hasPaths = p->paths(RR->node->now()).size() > 0;
@@ -304,6 +304,7 @@ public:
 
 			if ((!contacted)&&(_bestCurrentUpstream)) {
 				const SharedPtr<Path> up(_bestCurrentUpstream->getAppropriatePath(_now,true));
+				// 向路径发送path
 				if (up) {
 					p->sendHELLO(_tPtr,up->localSocket(),up->address(),_now);
 				}

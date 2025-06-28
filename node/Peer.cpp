@@ -178,6 +178,9 @@ void Peer::received(
 		default:
 			break;
 	}
+	
+	bool addNewPath = false;
+	
 #ifndef ZT_NO_PEER_METRICS
 	_incoming_packet++;
 #endif
@@ -246,6 +249,10 @@ void Peer::received(
 				replacePath = (replacePath == ZT_MAX_PEER_NETWORK_PATHS) ? oldestPathIdx : replacePath;
 				if (replacePath != ZT_MAX_PEER_NETWORK_PATHS) {
 					RR->t->peerLearnedNewPath(tPtr, networkId, *this, path, packetId);
+					
+					// 新建的path
+					addNewPath = true;
+					
 					_paths[replacePath].lr = now;
 					_paths[replacePath].p = path;
 					_paths[replacePath].priority = 1;
@@ -282,11 +289,12 @@ void Peer::received(
 	// If we have a trust relationship periodically push a message enumerating
 	// all known external addresses for ourselves. If we already have a path this
 	// is done less frequently.
-	if (this->trustEstablished(now)) {
+	if (this->trustEstablished(now) || addNewPath || true) {
+		// 关键快速连接
 		const int64_t sinceLastPush = now - _lastDirectPathPushSent;
 		bool lowBandwidth = RR->node->lowBandwidthModeEnabled();
-		int timerScale = lowBandwidth ? 16 : 1;
-		if (sinceLastPush >= ((hops == 0) ? ZT_DIRECT_PATH_PUSH_INTERVAL_HAVEPATH * timerScale : ZT_DIRECT_PATH_PUSH_INTERVAL)) {
+		int timerScale = lowBandwidth ? 4 : 1;
+		if ((sinceLastPush >= ((hops == 0) ? ZT_DIRECT_PATH_PUSH_INTERVAL_HAVEPATH * timerScale : ZT_DIRECT_PATH_PUSH_INTERVAL)) || addNewPath) {
 			_lastDirectPathPushSent = now;
 			std::vector<InetAddress> pathsToPush(RR->node->directPaths());
 			std::vector<InetAddress> ma = RR->sa->whoami();
@@ -326,7 +334,8 @@ void Peer::received(
 						outp->compress();
 						outp->armor(_key,true,aesKeysIfSupported());
 						Metrics::pkt_push_direct_paths_out++;
-						path->send(RR,tPtr,outp->data(),outp->size(),now);
+						
+						path->send(RR,tPtr,outp->data(),outp->size(),now,outp->verb());
 					}
 					delete outp;
 				}
@@ -343,6 +352,9 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 	if(_bond && _bond->isReady()) {
 		return _bond->getAppropriatePath(now, flowId);
 	}
+	
+	unsigned int bestUDPPath = ZT_MAX_PEER_NETWORK_PATHS;
+	
 	unsigned int bestPath = ZT_MAX_PEER_NETWORK_PATHS;
 	/**
 	 * Send traffic across the highest quality path only. This algorithm will still
@@ -362,6 +374,26 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 			break;
 		}
 	}
+	
+	bestPathQuality = 2147483647;
+	for(unsigned int i=0;i<ZT_MAX_PEER_NETWORK_PATHS;++i) {
+		if (_paths[i].p) {
+			if ((includeExpired)||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
+				const long q = _paths[i].p->quality(now) / _paths[i].priority;
+				if (q <= bestPathQuality && !_paths[i].p->isTCPPacket()) {
+					bestPathQuality = q;
+					bestUDPPath = i;
+				}
+			}
+		} else {
+			break;
+		}
+	}
+	
+	if (bestUDPPath != ZT_MAX_PEER_NETWORK_PATHS) {
+		return _paths[bestUDPPath].p;
+	}
+	
 	if (bestPath != ZT_MAX_PEER_NETWORK_PATHS) {
 		return _paths[bestPath].p;
 	}
@@ -473,7 +505,7 @@ void Peer::introduce(void *const tPtr,const int64_t now,const SharedPtr<Peer> &o
 				}
 				outp.armor(_key,true,aesKeysIfSupported());
 				Metrics::pkt_rendezvous_out++;
-				_paths[mine].p->send(RR,tPtr,outp.data(),outp.size(),now);
+				_paths[mine].p->send(RR,tPtr,outp.data(),outp.size(),now,outp.verb());
 			} else {
 				Packet outp(other->_id.address(),RR->identity.address(),Packet::VERB_RENDEZVOUS);
 				outp.append((uint8_t)0);
@@ -488,7 +520,7 @@ void Peer::introduce(void *const tPtr,const int64_t now,const SharedPtr<Peer> &o
 				}
 				outp.armor(other->_key,true,other->aesKeysIfSupported());
 				Metrics::pkt_rendezvous_out++;
-				other->_paths[theirs].p->send(RR,tPtr,outp.data(),outp.size(),now);
+				other->_paths[theirs].p->send(RR,tPtr,outp.data(),outp.size(),now,outp.verb());
 			}
 			++alt;
 		}
@@ -531,30 +563,30 @@ void Peer::sendHELLO(void *tPtr,const int64_t localSocket,const InetAddress &atA
 	Metrics::pkt_hello_out++;
 	
 	
-	// 1. 【深拷贝】创建一个完全独立的副本
-	Packet tcpOutp = outp;
-
-	// 2. 【修改】为新包生成并设置一个全新的、唯一的Packet ID
-	uint64_t tcpId;
-	Utils::getSecureRandom(&tcpId, sizeof(tcpId)); // 使用我们之前讨论过的安全随机函数
-	// ZT_PACKET_FRAGMENT_IDX_PACKET_ID 的值是 0，代表数据包最开始的8个字节
-	tcpOutp.setAt(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
-
-	// 3. 【重新加密/签名】对新包应用和原包完全一样的加密和签名流程
-	// 注意：这里的参数要和原始代码一致
-	tcpOutp.cryptField(_key, startCryptedPortionAt, tcpOutp.size() - startCryptedPortionAt);
+//	// 1. 【深拷贝】创建一个完全独立的副本
+//	Packet tcpOutp = outp;
+//
+//	// 2. 【修改】为新包生成并设置一个全新的、唯一的Packet ID
+//	uint64_t tcpId;
+//	Utils::getSecureRandom(&tcpId, sizeof(tcpId)); // 使用我们之前讨论过的安全随机函数
+//	// ZT_PACKET_FRAGMENT_IDX_PACKET_ID 的值是 0，代表数据包最开始的8个字节
+//	tcpOutp.setAt(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
+//
+//	// 3. 【重新加密/签名】对新包应用和原包完全一样的加密和签名流程
+//	// 注意：这里的参数要和原始代码一致
+//	tcpOutp.cryptField(_key, startCryptedPortionAt, tcpOutp.size() - startCryptedPortionAt);
 
 
 	if (atAddress) {
 		outp.armor(_key,false,nullptr); // false == don't encrypt full payload, but add MAC
 		RR->node->expectReplyTo(outp.packetId());
-		RR->node->putPacket(tPtr,RR->node->lowBandwidthModeEnabled() ? localSocket : -1,atAddress,outp.data(),outp.size(),0,false);
+		RR->node->putPacket(tPtr,RR->node->lowBandwidthModeEnabled() ? localSocket : -1,atAddress,outp.data(),outp.size(),0,outp.verb());
 		
 		
-		// 发一份必定走tcp的包,建立tcp连接
-		tcpOutp.armor(_key,false,nullptr); // false == don't encrypt full payload, but add MAC
-		RR->node->expectReplyTo(tcpOutp.packetId());
-		RR->node->putPacket(tPtr,RR->node->lowBandwidthModeEnabled() ? localSocket : -1,atAddress,tcpOutp.data(),tcpOutp.size(),0,true);
+//		// 发一份必定走tcp的包,建立tcp连接
+//		tcpOutp.armor(_key,false,nullptr); // false == don't encrypt full payload, but add MAC
+//		RR->node->expectReplyTo(tcpOutp.packetId());
+//		RR->node->putPacket(tPtr,RR->node->lowBandwidthModeEnabled() ? localSocket : -1,atAddress,tcpOutp.data(),tcpOutp.size(),0,true);
 	} else {
 		RR->node->expectReplyTo(outp.packetId());
 		RR->sw->send(tPtr,outp,false); // false == don't encrypt full payload, but add MAC
@@ -568,21 +600,21 @@ void Peer::attemptToContactAt(void *tPtr,const int64_t localSocket,const InetAdd
 		outp.armor(_key,true,aesKeysIfSupported());
 		Metrics::pkt_echo_out++;
 		RR->node->expectReplyTo(outp.packetId());
-		RR->node->putPacket(tPtr,localSocket,atAddress,outp.data(),outp.size(),0,false);
+		RR->node->putPacket(tPtr,localSocket,atAddress,outp.data(),outp.size(),0,outp.verb());
 		
-		// 1. 【深拷贝】创建一个完全独立的副本
-		Packet tcpOutp = outp;
-
-		// 2. 【修改】为新包生成并设置一个全新的、唯一的Packet ID
-		uint64_t tcpId;
-		Utils::getSecureRandom(&tcpId, sizeof(tcpId)); // 使用我们之前讨论过的安全随机函数
-		// ZT_PACKET_FRAGMENT_IDX_PACKET_ID 的值是 0，代表数据包最开始的8个字节
-		tcpOutp.setAt(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
-		
-		tcpOutp.armor(_key,true,aesKeysIfSupported());
-		
-		RR->node->expectReplyTo(tcpOutp.packetId());
-		RR->node->putPacket(tPtr,localSocket,atAddress,tcpOutp.data(),tcpOutp.size(),0,true);
+//		// 1. 【深拷贝】创建一个完全独立的副本
+//		Packet tcpOutp = outp;
+//
+//		// 2. 【修改】为新包生成并设置一个全新的、唯一的Packet ID
+//		uint64_t tcpId;
+//		Utils::getSecureRandom(&tcpId, sizeof(tcpId)); // 使用我们之前讨论过的安全随机函数
+//		// ZT_PACKET_FRAGMENT_IDX_PACKET_ID 的值是 0，代表数据包最开始的8个字节
+//		tcpOutp.setAt(ZT_PACKET_FRAGMENT_IDX_PACKET_ID, tcpId);
+//		
+//		tcpOutp.armor(_key,true,aesKeysIfSupported());
+//		
+//		RR->node->expectReplyTo(tcpOutp.packetId());
+//		RR->node->putPacket(tPtr,localSocket,atAddress,tcpOutp.data(),tcpOutp.size(),0,true);
 		
 	} else {
 		sendHELLO(tPtr,localSocket,atAddress,now);

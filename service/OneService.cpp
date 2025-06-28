@@ -144,13 +144,13 @@ using json = nlohmann::json;
 #define ZT_TCP_FALLBACK_AFTER 15000
 
 // How often to check for local interface addresses
-#define ZT_LOCAL_INTERFACE_CHECK_INTERVAL 30000
+#define ZT_LOCAL_INTERFACE_CHECK_INTERVAL 15000
 
 // Maximum write buffer size for outgoing TCP connections (sanity limit)
 #define ZT_TCP_MAX_WRITEQ_SIZE 33554432
 
 // TCP activity timeout
-#define ZT_TCP_ACTIVITY_TIMEOUT 30000
+#define ZT_TCP_ACTIVITY_TIMEOUT 15000
 
 #if ZT_VAULT_SUPPORT
 size_t curlResponseWrite(void *ptr, size_t size, size_t nmemb, std::string *data)
@@ -694,7 +694,7 @@ static int SnodeVirtualNetworkConfigFunction(ZT_Node *node,void *uptr,void *tptr
 static void SnodeEventCallback(ZT_Node *node,void *uptr,void *tptr,enum ZT_Event event,const void *metaData);
 static void SnodeStatePutFunction(ZT_Node *node,void *uptr,void *tptr,enum ZT_StateObjectType type,const uint64_t id[2],const void *data,int len);
 static int SnodeStateGetFunction(ZT_Node *node,void *uptr,void *tptr,enum ZT_StateObjectType type,const uint64_t id[2],void *data,unsigned int maxlen);
-static int SnodeWirePacketSendFunction(ZT_Node *node,void *uptr,void *tptr,int64_t localSocket,const struct sockaddr_storage *addr,const void *data,unsigned int len,unsigned int ttl,bool isTCPOnly);
+static int SnodeWirePacketSendFunction(ZT_Node *node,void *uptr,void *tptr,int64_t localSocket,const struct sockaddr_storage *addr,const void *data,unsigned int len,unsigned int ttl,int verb_as_int);
 static void SnodeVirtualNetworkFrameFunction(ZT_Node *node,void *uptr,void *tptr,uint64_t nwid,void **nuptr,uint64_t sourceMac,uint64_t destMac,unsigned int etherType,unsigned int vlanId,const void *data,unsigned int len);
 static int SnodePathCheckFunction(ZT_Node *node,void *uptr,void *tptr,uint64_t ztaddr,int64_t localSocket,const struct sockaddr_storage *remoteAddr);
 static int SnodePathLookupFunction(ZT_Node *node,void *uptr,void *tptr,uint64_t ztaddr,int family,struct sockaddr_storage *result);
@@ -1214,7 +1214,7 @@ public:
 
 				// Attempt to detect sleep/wake events by detecting delay overruns
 				bool restarted = false;
-				if ((now > clockShouldBe)&&((now - clockShouldBe) > 10000)) {
+				if ((now > clockShouldBe)&&((now - clockShouldBe) > 5000)) {
 					_lastRestart = now;
 					restarted = true;
 				}
@@ -1293,6 +1293,8 @@ public:
 						}
 					}
 				}
+				
+				_node->_directPathCount = _node->_directPaths.size();
 
 				// Run background task processor in core if it's time to do so
 				int64_t dl = _nextBackgroundTaskDeadline;
@@ -3069,8 +3071,26 @@ public:
 		tc->sock = sock;
 
 		if (tc->type == TcpConnection::TCP_TUNNEL_OUTGOING) {
-			if (_tcpFallbackTunnel)
+			
+//			bool isTCPRelay = (bool)Phy<OneServiceImpl *>::isTCPRelay(sock);
+			
+//			const InetAddress relayAddr(_fallbackRelayAddress);
+			
+//			char addressBuf[64];
+//			char *ipAndPort = tc->remoteAddr.toString(addressBuf);
+//			fprintf(stderr, "创建新的_tcpFallbackTunnel, remoteAddr为%s:\n", ipAndPort);
+			
+//			if (tc->remoteAddr == relayAddr) {
+//				Phy<OneServiceImpl *>::setTCPRelay(sock, true);
+//			}
+			
+			if (_tcpFallbackTunnel) {
+//				char addressBuf[64];
+//				char *ipAndPort = _tcpFallbackTunnel->remoteAddr.toString(addressBuf);
+//				fprintf(stderr, "关闭旧的_tcpFallbackTunnel, remoteAddr为%s:\n", ipAndPort);
+				
 				_phy.close(_tcpFallbackTunnel->sock);
+			}
 			_tcpFallbackTunnel = tc;
             
             if (_custom_tcp) {
@@ -3110,6 +3130,10 @@ public:
 			http_parser_init(&(tc->parser),HTTP_REQUEST);
 			tc->parser.data = (void *)tc;
 			tc->messageSize = 0;
+			
+//			char addressBuf[64];
+//			char *ipAndPort = tc->remoteAddr.toString(addressBuf);
+//			fprintf(stderr, "phyOnTcpAccept remoteAddr为%s:\n", ipAndPort);
 
 			*uptrN = (void *)tc;
 		}
@@ -3120,6 +3144,11 @@ public:
 		TcpConnection *tc = (TcpConnection *)*uptr;
 		if (tc) {
 			if (tc == _tcpFallbackTunnel) {
+				
+//				char addressBuf[64];
+//				char *ipAndPort = tc->remoteAddr.toString(addressBuf);
+//				fprintf(stderr, "phyOnTcpClose remoteAddr为%s:\n", ipAndPort);
+				
 				_tcpFallbackTunnel = (TcpConnection *)0;
 			}
 			{
@@ -3193,6 +3222,11 @@ public:
 								}
 
 								if (from) {
+									
+//									char addressBuf[64];
+//									char *ipAndPort = from.toString(addressBuf);
+//									fprintf(stderr, "phyOnTcpData from Addr为%s:\n", ipAndPort);
+									
 									InetAddress fakeTcpLocalInterfaceAddress((uint32_t)0xffffffff,0xffff);
 									// 记录来自tcp的地址
 									const ZT_ResultCode rc = _node->processWirePacket(
@@ -3711,19 +3745,49 @@ public:
 		return -1;
 	}
 
-	inline int nodeWirePacketSendFunction(const int64_t localSocket,const struct sockaddr_storage *addr,const void *data,unsigned int len,unsigned int ttl,bool isTCPOnly)
+	inline int nodeWirePacketSendFunction(const int64_t localSocket,const struct sockaddr_storage *addr,const void *data,unsigned int len,unsigned int ttl,Packet::Verb verb)
 	{
+//		fprintf(stderr, "nodeWirePacketSendFunction begin\n");
+		
 		bool isTCPPath = false;
+		
+		bool needSendTCP = false;
 		
 #ifdef ZT_TCP_FALLBACK_RELAY
 		if(_allowTcpFallbackRelay) {
 			if (addr->ss_family == AF_INET) {
 								
 				const InetAddress *inetAddrPtr = reinterpret_cast<const InetAddress *>(addr);
-
 				const SharedPtr<Path> path(_node->RR->topology->getPath(localSocket,inetAddrPtr));
 				
 				isTCPPath = path->isTCPPacket();
+				
+				if (verb == Packet::VERB_HELLO ||
+					verb == Packet::VERB_ERROR ||
+					verb == Packet::VERB_WHOIS ||
+					verb == Packet::VERB_RENDEZVOUS ||
+					verb == Packet::VERB_PUSH_DIRECT_PATHS ||
+					verb == Packet::VERB_PATH_NEGOTIATION_REQUEST ||
+					verb == Packet::VERB_NETWORK_CONFIG_REQUEST ||
+					verb == Packet::VERB_NETWORK_CONFIG ||
+					verb == Packet::VERB_NETWORK_CREDENTIALS) {
+					
+//					if (path) {
+//						if (!isTCPPath && path->alive(_node->now()) == false) {
+//							needSendTCP = true;
+//						}
+//					} else {
+//						needSendTCP = true;
+//					}
+					
+					needSendTCP = true;
+				}
+				
+//				if (_node->_directPathCount == 0) {
+//					// 没有直连地址, 需要发送tcp数据
+//					needSendTCP = true;
+//				}
+				
 				
 				// TCP fallback tunnel support, currently IPv4 only
 				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
@@ -3731,12 +3795,21 @@ public:
 					// IP address in ZT_TCP_FALLBACK_AFTER milliseconds. If we do start getting
 					// valid direct traffic we'll stop using it and close the socket after a while.
 					const int64_t now = OSUtils::now();
-					if (isTCPPath || isTCPOnly || _forceTcpRelay) {
+					if (isTCPPath || needSendTCP || _forceTcpRelay) {
+						
+//						fprintf(stderr, "nodeWirePacketSendFunction 允许发送tcp, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
+						
 						if (_tcpFallbackTunnel) {
+							
+//							fprintf(stderr, "nodeWirePacketSendFunction 允许发送tcp-存在_tcpFallbackTunnel, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
+							
 							bool flushNow = false;
 							{
 								Mutex::Lock _l(_tcpFallbackTunnel->writeq_m);
 								if (_tcpFallbackTunnel->writeq.size() < (1024 * 64)) {
+									
+//									fprintf(stderr, "nodeWirePacketSendFunction 允许发送tcp-存在_tcpFallbackTunnel-添加数据, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
+									
 									if (_tcpFallbackTunnel->writeq.length() == 0) {
 										_phy.setNotifyWritable(_tcpFallbackTunnel->sock,true);
 										flushNow = true;
@@ -3754,10 +3827,14 @@ public:
 								}
 							}
 							if (flushNow) {
+//								fprintf(stderr, "nodeWirePacketSendFunction 允许发送tcp-存在_tcpFallbackTunnel-添加数据-刷新写入, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
 								void *tmpptr = (void *)_tcpFallbackTunnel;
 								phyOnTcpWritable(_tcpFallbackTunnel->sock,&tmpptr);
 							}
-						} else if (isTCPPath || isTCPOnly || _forceTcpRelay) {
+						} else if (isTCPPath || needSendTCP || _forceTcpRelay) {
+							
+//							fprintf(stderr, "nodeWirePacketSendFunction 创建TcpConnection, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
+							
 							const InetAddress addr(_fallbackRelayAddress);
 							TcpConnection *tc = new TcpConnection();
 							{
@@ -3778,12 +3855,17 @@ public:
 				}
 			}
 		}
-		if (isTCPPath || isTCPOnly || _forceTcpRelay) {
+		if (isTCPPath || _forceTcpRelay) {
 			// Shortcut here so that we don't emit any UDP packets
+			
+//			fprintf(stderr, "nodeWirePacketSendFunction 停止发送udp, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay);
+			
 			return 0;
 		}
 #endif // ZT_TCP_FALLBACK_RELAY
 
+//		fprintf(stderr, "nodeWirePacketSendFunction end\n");
+		
 		// Even when relaying we still send via UDP. This way if UDP starts
 		// working we can instantly "fail forward" to it and stop using TCP
 		// proxy fallback, which is slow.
@@ -4017,8 +4099,11 @@ static void SnodeStatePutFunction(ZT_Node *node,void *uptr,void *tptr,enum ZT_St
 { reinterpret_cast<OneServiceImpl *>(uptr)->nodeStatePutFunction(type,id,data,len); }
 static int SnodeStateGetFunction(ZT_Node *node,void *uptr,void *tptr,enum ZT_StateObjectType type,const uint64_t id[2],void *data,unsigned int maxlen)
 { return reinterpret_cast<OneServiceImpl *>(uptr)->nodeStateGetFunction(type,id,data,maxlen); }
-static int SnodeWirePacketSendFunction(ZT_Node *node,void *uptr,void *tptr,int64_t localSocket,const struct sockaddr_storage *addr,const void *data,unsigned int len,unsigned int ttl, bool isTCPOnly)
-{ return reinterpret_cast<OneServiceImpl *>(uptr)->nodeWirePacketSendFunction(localSocket,addr,data,len,ttl,isTCPOnly); }
+static int SnodeWirePacketSendFunction(ZT_Node *node,void *uptr,void *tptr,int64_t localSocket,const struct sockaddr_storage *addr,const void *data,unsigned int len,unsigned int ttl, int verb_as_int)
+{
+	ZeroTier::Packet::Verb verb = static_cast<ZeroTier::Packet::Verb>(verb_as_int);
+	return reinterpret_cast<OneServiceImpl *>(uptr)->nodeWirePacketSendFunction(localSocket,addr,data,len,ttl,verb);
+}
 static void SnodeVirtualNetworkFrameFunction(ZT_Node *node,void *uptr,void *tptr,uint64_t nwid,void **nuptr,uint64_t sourceMac,uint64_t destMac,unsigned int etherType,unsigned int vlanId,const void *data,unsigned int len)
 { reinterpret_cast<OneServiceImpl *>(uptr)->nodeVirtualNetworkFrameFunction(nwid,nuptr,sourceMac,destMac,etherType,vlanId,data,len); }
 static int SnodePathCheckFunction(ZT_Node *node,void *uptr,void *tptr,uint64_t ztaddr,int64_t localSocket,const struct sockaddr_storage *remoteAddr)

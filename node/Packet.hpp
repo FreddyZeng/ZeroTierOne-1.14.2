@@ -535,6 +535,8 @@ public:
 	 */
 	enum Verb /* Max value: 32 (5 bits) */
 	{
+		VERB_NOTCP = 0x1f,
+		
 		/**
 		 * No operation (ignored, no reply)
 		 */

@@ -146,7 +146,8 @@ public:
 	{
 		SharedPtr<Path> bp(getAppropriatePath(now,force));
 		if (bp) {
-			return bp->send(RR,tPtr,data,len,now);
+			// 关键快速连接
+			return bp->send(RR,tPtr,data,len,now,Packet::VERB_RENDEZVOUS);
 		}
 		return false;
 	}

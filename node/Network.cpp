@@ -1350,9 +1350,9 @@ bool Network::gate(void *tPtr,const SharedPtr<Peer> &peer)
 	Mutex::Lock _l(_lock);
 	try {
         
-        if (peer->isPlanetPublicKey()) {
-            return false;
-        }
+//        if (peer->isPlanetPublicKey()) {
+//            return false;
+//        }
         
 		if (_config) {
 			Membership *m = _memberships.get(peer->address());

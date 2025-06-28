@@ -201,7 +201,7 @@ void Multicaster::send(
 					}
 					outp.armor(bestMulticastReplicator->key(),true,bestMulticastReplicator->aesKeysIfSupported());
 					Metrics::pkt_multicast_frame_out++;
-					bestMulticastReplicatorPath->send(RR,tPtr,outp.data(),outp.size(),now);
+					bestMulticastReplicatorPath->send(RR,tPtr,outp.data(),outp.size(),now,outp.verb());
 					return;
 				}
 			}

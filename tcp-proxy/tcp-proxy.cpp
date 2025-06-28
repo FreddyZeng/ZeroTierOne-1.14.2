@@ -45,7 +45,7 @@
 
 #include "../node/Metrics.hpp"
 
-#define ZT_TCP_PROXY_CONNECTION_TIMEOUT_SECONDS 60
+#define ZT_TCP_PROXY_CONNECTION_TIMEOUT_SECONDS 300
 #define ZT_TCP_PROXY_TCP_PORT 58443
 
 using namespace ZeroTier;
