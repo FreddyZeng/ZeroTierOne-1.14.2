@@ -147,7 +147,7 @@ public:
 		SharedPtr<Path> bp(getAppropriatePath(now,force));
 		if (bp) {
 			// 关键快速连接
-			return bp->send(RR,tPtr,data,len,now,Packet::VERB_RENDEZVOUS);
+			return bp->send(RR,tPtr,data,len,now,bp->isTCPPacket() ? Packet::VERB_RENDEZVOUS : Packet::VERB_NOTCP);
 		}
 		return false;
 	}

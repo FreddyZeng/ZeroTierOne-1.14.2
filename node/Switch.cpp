@@ -130,7 +130,7 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 						return;
 					}
 
-					if (fragment.hops() < ZT_RELAY_MAX_HOPS || needIntroduce) {
+					if (fragment.hops() < ZT_RELAY_MAX_HOPS) {
 						fragment.incrementHops();
 
 						// Note: we don't bother initiating NAT-t for fragments, since heads will set that off.
@@ -208,8 +208,25 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 					}
 
 					Packet packet(data,len);
+					
+					Packet::Verb verb = packet.verb();
+					bool needSendTCP = false;
+					
+					if (verb == Packet::VERB_HELLO ||
+						verb == Packet::VERB_ERROR ||
+						verb == Packet::VERB_WHOIS ||
+						verb == Packet::VERB_RENDEZVOUS ||
+						verb == Packet::VERB_PUSH_DIRECT_PATHS ||
+						verb == Packet::VERB_PATH_NEGOTIATION_REQUEST ||
+						verb == Packet::VERB_NETWORK_CONFIG_REQUEST ||
+						verb == Packet::VERB_NETWORK_CONFIG ||
+						verb == Packet::VERB_NETWORK_CREDENTIALS) {
+						
+						needSendTCP = true;
+					}
+					
 
-					if (packet.hops() < ZT_RELAY_MAX_HOPS || needIntroduce) {
+					if (packet.hops() < ZT_RELAY_MAX_HOPS || needSendTCP) {
 						packet.incrementHops();
 						SharedPtr<Peer> relayTo = RR->topology->getPeer(tPtr,destination);
 						if ((relayTo)&&(relayTo->sendDirect(tPtr,packet.data(),packet.size(),now,false))) {

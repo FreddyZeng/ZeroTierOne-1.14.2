@@ -3791,6 +3791,27 @@ public:
 				
 				// TCP fallback tunnel support, currently IPv4 only
 				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
+					
+					if (!_tcpFallbackTunnel){
+						
+//							fprintf(stderr, "nodeWirePacketSendFunction 创建TcpConnection, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
+						
+						const InetAddress addr(_fallbackRelayAddress);
+						TcpConnection *tc = new TcpConnection();
+						{
+							Mutex::Lock _l(_tcpConnections_m);
+							_tcpConnections.push_back(tc);
+						}
+						tc->type = TcpConnection::TCP_TUNNEL_OUTGOING;
+						tc->remoteAddr = addr;
+						tc->lastReceive = OSUtils::now();
+						tc->parent = this;
+						tc->sock = (PhySocket *)0; // set in connect handler
+						tc->messageSize = 0;
+						bool connected = false;
+						_phy.tcpConnect(reinterpret_cast<const struct sockaddr *>(&addr),connected,(void *)tc,true);
+					}
+					
 					// Engage TCP tunnel fallback if we haven't received anything valid from a global
 					// IP address in ZT_TCP_FALLBACK_AFTER milliseconds. If we do start getting
 					// valid direct traffic we'll stop using it and close the socket after a while.
