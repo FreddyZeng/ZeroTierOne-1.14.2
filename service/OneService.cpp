@@ -3752,7 +3752,7 @@ public:
 		
 		bool returnResult = result;
 		
-		if (returnResult = -1) {
+		if (returnResult == -1) {
 			// udp 发送失败, 使用tcp发送
 			
 #ifdef ZT_TCP_FALLBACK_RELAY
