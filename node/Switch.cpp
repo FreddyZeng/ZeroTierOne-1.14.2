@@ -210,7 +210,7 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 					Packet packet(data,len);
 					
 					Packet::Verb verb = packet.verb();
-					bool needSendTCP = false;
+					bool forceSend = false;
 					
 					if (verb == Packet::VERB_HELLO ||
 						verb == Packet::VERB_ERROR ||
@@ -222,11 +222,11 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 						verb == Packet::VERB_NETWORK_CONFIG ||
 						verb == Packet::VERB_NETWORK_CREDENTIALS) {
 						
-						needSendTCP = true;
+						forceSend = true;
 					}
 					
 
-					if (packet.hops() < ZT_RELAY_MAX_HOPS || needSendTCP) {
+					if (packet.hops() < ZT_RELAY_MAX_HOPS || forceSend) {
 						packet.incrementHops();
 						SharedPtr<Peer> relayTo = RR->topology->getPeer(tPtr,destination);
 						if ((relayTo)&&(relayTo->sendDirect(tPtr,packet.data(),packet.size(),now,false))) {
