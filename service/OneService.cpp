@@ -1187,6 +1187,27 @@ public:
 						_node->orbit((void *)0,Utils::hexStrToU64(f->substr(0,dot).c_str()),0);
 				}
 			}
+			
+#ifdef ZT_TCP_FALLBACK_RELAY
+		if(_allowTcpFallbackRelay && !_tcpFallbackTunnel) {
+			const InetAddress addr(_fallbackRelayAddress);
+			TcpConnection *tc = new TcpConnection();
+			{
+				Mutex::Lock _l(_tcpConnections_m);
+				_tcpConnections.push_back(tc);
+			}
+			tc->type = TcpConnection::TCP_TUNNEL_OUTGOING;
+			tc->remoteAddr = addr;
+			tc->lastReceive = OSUtils::now();
+			tc->parent = this;
+			tc->sock = (PhySocket *)0; // set in connect handler
+			tc->messageSize = 0;
+			bool connected = false;
+			_phy.tcpConnect(reinterpret_cast<const struct sockaddr *>(&addr),connected,(void *)tc,true);
+		}
+		
+#endif // ZT_TCP_FALLBACK_RELAY
+			
 
 			// Main I/O loop
 			_nextBackgroundTaskDeadline = 0;
