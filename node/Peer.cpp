@@ -363,7 +363,7 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 	long bestPathQuality = 2147483647;
 	for(unsigned int i=0;i<ZT_MAX_PEER_NETWORK_PATHS;++i) {
 		if (_paths[i].p) {
-			if ((includeExpired)||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
+			if ((includeExpired && !_paths[i].p->isTCPPacket())||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
 				const long q = _paths[i].p->quality(now) / _paths[i].priority;
 				if (q <= bestPathQuality) {
 					bestPathQuality = q;
@@ -378,7 +378,7 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 	bestPathQuality = 2147483647;
 	for(unsigned int i=0;i<ZT_MAX_PEER_NETWORK_PATHS;++i) {
 		if (_paths[i].p) {
-			if ((includeExpired)||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
+			if ((includeExpired && !_paths[i].p->isTCPPacket())||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
 				const long q = _paths[i].p->quality(now) / _paths[i].priority;
 				if (q <= bestPathQuality && !_paths[i].p->isTCPPacket()) {
 					bestPathQuality = q;
