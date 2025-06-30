@@ -3072,23 +3072,7 @@ public:
 
 		if (tc->type == TcpConnection::TCP_TUNNEL_OUTGOING) {
 			
-//			bool isTCPRelay = (bool)Phy<OneServiceImpl *>::isTCPRelay(sock);
-			
-//			const InetAddress relayAddr(_fallbackRelayAddress);
-			
-//			char addressBuf[64];
-//			char *ipAndPort = tc->remoteAddr.toString(addressBuf);
-//			fprintf(stderr, "创建新的_tcpFallbackTunnel, remoteAddr为%s:\n", ipAndPort);
-			
-//			if (tc->remoteAddr == relayAddr) {
-//				Phy<OneServiceImpl *>::setTCPRelay(sock, true);
-//			}
-			
 			if (_tcpFallbackTunnel) {
-//				char addressBuf[64];
-//				char *ipAndPort = _tcpFallbackTunnel->remoteAddr.toString(addressBuf);
-//				fprintf(stderr, "关闭旧的_tcpFallbackTunnel, remoteAddr为%s:\n", ipAndPort);
-				
 				_phy.close(_tcpFallbackTunnel->sock);
 			}
 			_tcpFallbackTunnel = tc;
@@ -3130,10 +3114,6 @@ public:
 			http_parser_init(&(tc->parser),HTTP_REQUEST);
 			tc->parser.data = (void *)tc;
 			tc->messageSize = 0;
-			
-//			char addressBuf[64];
-//			char *ipAndPort = tc->remoteAddr.toString(addressBuf);
-//			fprintf(stderr, "phyOnTcpAccept remoteAddr为%s:\n", ipAndPort);
 
 			*uptrN = (void *)tc;
 		}
@@ -3144,10 +3124,6 @@ public:
 		TcpConnection *tc = (TcpConnection *)*uptr;
 		if (tc) {
 			if (tc == _tcpFallbackTunnel) {
-				
-//				char addressBuf[64];
-//				char *ipAndPort = tc->remoteAddr.toString(addressBuf);
-//				fprintf(stderr, "phyOnTcpClose remoteAddr为%s:\n", ipAndPort);
 				
 				_tcpFallbackTunnel = (TcpConnection *)0;
 			}
