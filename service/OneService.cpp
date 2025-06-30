@@ -3747,55 +3747,75 @@ public:
 
 	inline int nodeWirePacketSendFunction(const int64_t localSocket,const struct sockaddr_storage *addr,const void *data,unsigned int len,unsigned int ttl,Packet::Verb verb)
 	{
-//		fprintf(stderr, "nodeWirePacketSendFunction begin\n");
 		
-		bool isTCPPath = false;
+		const InetAddress *inetAddrPtr = reinterpret_cast<const InetAddress *>(addr);
+		const SharedPtr<Path> path(_node->RR->topology->getPath(localSocket,inetAddrPtr));
 		
-		bool needSendTCP = false;
+		bool isTCPPath = path->isTCPPacket();
 		
+		
+		bool result = -1;
+		
+		if (!_forceTcpRelay && !isTCPPath) {
+			// Even when relaying we still send via UDP. This way if UDP starts
+			// working we can instantly "fail forward" to it and stop using TCP
+			// proxy fallback, which is slow.
+			if ((localSocket != -1)&&(localSocket != 0)&&(_binder.isUdpSocketValid((PhySocket *)((uintptr_t)localSocket)))) {
+				if ((ttl)&&(addr->ss_family == AF_INET)) {
+					_phy.setIp4UdpTtl((PhySocket *)((uintptr_t)localSocket),ttl);
+				}
+				const bool r = _phy.udpSend((PhySocket *)((uintptr_t)localSocket),(const struct sockaddr *)addr,data,len);
+				if ((ttl)&&(addr->ss_family == AF_INET)) {
+					_phy.setIp4UdpTtl((PhySocket *)((uintptr_t)localSocket),255);
+				}
+				result = ((r) ? 0 : -1);
+			} else {
+				result = ((_binder.udpSendAll(_phy,addr,data,len,ttl)) ? 0 : -1);
+			}
+		}
+		
+		bool returnResult = result;
+		
+		if (returnResult = -1) {
+			// udp 发送失败, 使用tcp发送
+			
 #ifdef ZT_TCP_FALLBACK_RELAY
 		if(_allowTcpFallbackRelay) {
 			if (addr->ss_family == AF_INET) {
-								
-				const InetAddress *inetAddrPtr = reinterpret_cast<const InetAddress *>(addr);
-				const SharedPtr<Path> path(_node->RR->topology->getPath(localSocket,inetAddrPtr));
-				
-				isTCPPath = path->isTCPPacket();
-				
-				if (verb == Packet::VERB_HELLO ||
-					verb == Packet::VERB_ERROR ||
-					verb == Packet::VERB_WHOIS ||
-					verb == Packet::VERB_RENDEZVOUS ||
-					verb == Packet::VERB_PUSH_DIRECT_PATHS ||
-					verb == Packet::VERB_PATH_NEGOTIATION_REQUEST ||
-					verb == Packet::VERB_NETWORK_CONFIG_REQUEST ||
-					verb == Packet::VERB_NETWORK_CONFIG ||
-					verb == Packet::VERB_NETWORK_CREDENTIALS) {
-					
-//					if (path) {
-//						if (!isTCPPath && path->alive(_node->now()) == false) {
-//							needSendTCP = true;
-//						}
-//					} else {
-//						needSendTCP = true;
-//					}
-					
-					needSendTCP = true;
-				}
-				
-//				if (_node->_directPathCount == 0) {
-//					// 没有直连地址, 需要发送tcp数据
-//					needSendTCP = true;
-//				}
-				
-				
 				// TCP fallback tunnel support, currently IPv4 only
 				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
-					
-					if (!_tcpFallbackTunnel){
+					// Engage TCP tunnel fallback if we haven't received anything valid from a global
+					// IP address in ZT_TCP_FALLBACK_AFTER milliseconds. If we do start getting
+					// valid direct traffic we'll stop using it and close the socket after a while.
+					const int64_t now = OSUtils::now();
+					if (_tcpFallbackTunnel) {
+						bool flushNow = false;
+						{
+							Mutex::Lock _l(_tcpFallbackTunnel->writeq_m);
+							if (_tcpFallbackTunnel->writeq.size() < (1024 * 64)) {
+								if (_tcpFallbackTunnel->writeq.length() == 0) {
+									_phy.setNotifyWritable(_tcpFallbackTunnel->sock,true);
+									flushNow = true;
+								}
+								const unsigned long mlen = len + 7;
+								_tcpFallbackTunnel->writeq.push_back((char)0x17);
+								_tcpFallbackTunnel->writeq.push_back((char)0x03);
+								_tcpFallbackTunnel->writeq.push_back((char)0x03); // fake TLS 1.2 header
+								_tcpFallbackTunnel->writeq.push_back((char)((mlen >> 8) & 0xff));
+								_tcpFallbackTunnel->writeq.push_back((char)(mlen & 0xff));
+								_tcpFallbackTunnel->writeq.push_back((char)4); // IPv4
+								_tcpFallbackTunnel->writeq.append(reinterpret_cast<const char *>(reinterpret_cast<const void *>(&(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr))),4);
+								_tcpFallbackTunnel->writeq.append(reinterpret_cast<const char *>(reinterpret_cast<const void *>(&(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_port))),2);
+								_tcpFallbackTunnel->writeq.append((const char *)data,len);
+							}
+						}
+						if (flushNow) {
+							void *tmpptr = (void *)_tcpFallbackTunnel;
+							phyOnTcpWritable(_tcpFallbackTunnel->sock,&tmpptr);
+						}
 						
-//							fprintf(stderr, "nodeWirePacketSendFunction 创建TcpConnection, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
-						
+						returnResult = 1;
+					} else {
 						const InetAddress addr(_fallbackRelayAddress);
 						TcpConnection *tc = new TcpConnection();
 						{
@@ -3811,97 +3831,19 @@ public:
 						bool connected = false;
 						_phy.tcpConnect(reinterpret_cast<const struct sockaddr *>(&addr),connected,(void *)tc,true);
 					}
-					
-					// Engage TCP tunnel fallback if we haven't received anything valid from a global
-					// IP address in ZT_TCP_FALLBACK_AFTER milliseconds. If we do start getting
-					// valid direct traffic we'll stop using it and close the socket after a while.
-					const int64_t now = OSUtils::now();
-					if (isTCPPath || needSendTCP || _forceTcpRelay) {
-						
-//						fprintf(stderr, "nodeWirePacketSendFunction 允许发送tcp, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
-						
-						if (_tcpFallbackTunnel) {
-							
-//							fprintf(stderr, "nodeWirePacketSendFunction 允许发送tcp-存在_tcpFallbackTunnel, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
-							
-							bool flushNow = false;
-							{
-								Mutex::Lock _l(_tcpFallbackTunnel->writeq_m);
-								if (_tcpFallbackTunnel->writeq.size() < (1024 * 64)) {
-									
-//									fprintf(stderr, "nodeWirePacketSendFunction 允许发送tcp-存在_tcpFallbackTunnel-添加数据, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
-									
-									if (_tcpFallbackTunnel->writeq.length() == 0) {
-										_phy.setNotifyWritable(_tcpFallbackTunnel->sock,true);
-										flushNow = true;
-									}
-									const unsigned long mlen = len + 7;
-									_tcpFallbackTunnel->writeq.push_back((char)0x17);
-									_tcpFallbackTunnel->writeq.push_back((char)0x03);
-									_tcpFallbackTunnel->writeq.push_back((char)0x03); // fake TLS 1.2 header
-									_tcpFallbackTunnel->writeq.push_back((char)((mlen >> 8) & 0xff));
-									_tcpFallbackTunnel->writeq.push_back((char)(mlen & 0xff));
-									_tcpFallbackTunnel->writeq.push_back((char)4); // IPv4
-									_tcpFallbackTunnel->writeq.append(reinterpret_cast<const char *>(reinterpret_cast<const void *>(&(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr))),4);
-									_tcpFallbackTunnel->writeq.append(reinterpret_cast<const char *>(reinterpret_cast<const void *>(&(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_port))),2);
-									_tcpFallbackTunnel->writeq.append((const char *)data,len);
-								}
-							}
-							if (flushNow) {
-//								fprintf(stderr, "nodeWirePacketSendFunction 允许发送tcp-存在_tcpFallbackTunnel-添加数据-刷新写入, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
-								void *tmpptr = (void *)_tcpFallbackTunnel;
-								phyOnTcpWritable(_tcpFallbackTunnel->sock,&tmpptr);
-							}
-						} else if (isTCPPath || needSendTCP || _forceTcpRelay) {
-							
-//							fprintf(stderr, "nodeWirePacketSendFunction 创建TcpConnection, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d, isPathAlive:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay, isPathAlive);
-							
-							const InetAddress addr(_fallbackRelayAddress);
-							TcpConnection *tc = new TcpConnection();
-							{
-								Mutex::Lock _l(_tcpConnections_m);
-								_tcpConnections.push_back(tc);
-							}
-							tc->type = TcpConnection::TCP_TUNNEL_OUTGOING;
-							tc->remoteAddr = addr;
-							tc->lastReceive = OSUtils::now();
-							tc->parent = this;
-							tc->sock = (PhySocket *)0; // set in connect handler
-							tc->messageSize = 0;
-							bool connected = false;
-							_phy.tcpConnect(reinterpret_cast<const struct sockaddr *>(&addr),connected,(void *)tc,true);
-						}
-					}
 					_lastSendToGlobalV4 = now;
 				}
 			}
 		}
-		if (isTCPPath || _forceTcpRelay) {
-			// Shortcut here so that we don't emit any UDP packets
-			
-//			fprintf(stderr, "nodeWirePacketSendFunction 停止发送udp, isTCPPath:%d, isTCPOnly:%d, _forceTcpRelay:%d\n", isTCPPath, isTCPOnly, _forceTcpRelay);
-			
-			return 0;
-		}
-#endif // ZT_TCP_FALLBACK_RELAY
-
-//		fprintf(stderr, "nodeWirePacketSendFunction end\n");
 		
-		// Even when relaying we still send via UDP. This way if UDP starts
-		// working we can instantly "fail forward" to it and stop using TCP
-		// proxy fallback, which is slow.
-		if ((localSocket != -1)&&(localSocket != 0)&&(_binder.isUdpSocketValid((PhySocket *)((uintptr_t)localSocket)))) {
-			if ((ttl)&&(addr->ss_family == AF_INET)) {
-                _phy.setIp4UdpTtl((PhySocket *)((uintptr_t)localSocket),ttl);
-            }
-			const bool r = _phy.udpSend((PhySocket *)((uintptr_t)localSocket),(const struct sockaddr *)addr,data,len);
-			if ((ttl)&&(addr->ss_family == AF_INET)) {
-                _phy.setIp4UdpTtl((PhySocket *)((uintptr_t)localSocket),255);
-            }
-			return ((r) ? 0 : -1);
-		} else {
-			return ((_binder.udpSendAll(_phy,addr,data,len,ttl)) ? 0 : -1);
+#endif // ZT_TCP_FALLBACK_RELAY
+			
+			
+			
 		}
+		
+		return returnResult;
+
 	}
 
 	inline void nodeVirtualNetworkFrameFunction(uint64_t nwid,void **nuptr,uint64_t sourceMac,uint64_t destMac,unsigned int etherType,unsigned int vlanId,const void *data,unsigned int len)
