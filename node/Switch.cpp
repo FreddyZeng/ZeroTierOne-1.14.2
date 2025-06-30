@@ -129,9 +129,16 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 					if ( (!RR->topology->amUpstream()) && (!path->trustEstablished(now)) ) {
 						return;
 					}
+					
+					bool isForceSendHopFlag = fragment.isForceSendHopFlag(); // 强制转发分片标记
 
-					if (fragment.hops() < ZT_RELAY_MAX_HOPS) {
+					if (fragment.hops() < ZT_RELAY_MAX_HOPS || isForceSendHopFlag) {
 						fragment.incrementHops();
+						
+						if (isForceSendHopFlag) {
+							// 如果是强制转发, 继续改成强制转发标记
+							fragment.setForceSendHopFlag();
+						}
 
 						// Note: we don't bother initiating NAT-t for fragments, since heads will set that off.
 						// It wouldn't hurt anything, just redundant and unnecessary.
@@ -1190,10 +1197,33 @@ void Switch::_sendViaSpecificPath(void *tPtr,SharedPtr<Peer> peer,SharedPtr<Path
 				++fragsRemaining;
 			}
 			const unsigned int totalFragments = fragsRemaining + 1;
+			
+			Packet::Verb verb = packet.verb();
+			bool forceSend = false;
+			
+			if (verb == Packet::VERB_HELLO ||
+				verb == Packet::VERB_ERROR ||
+				verb == Packet::VERB_WHOIS ||
+				verb == Packet::VERB_RENDEZVOUS ||
+				verb == Packet::VERB_PUSH_DIRECT_PATHS ||
+				verb == Packet::VERB_PATH_NEGOTIATION_REQUEST ||
+				verb == Packet::VERB_NETWORK_CONFIG_REQUEST ||
+				verb == Packet::VERB_NETWORK_CONFIG ||
+				verb == Packet::VERB_NETWORK_CREDENTIALS) {
+				
+				forceSend = true;
+			}
 
 			for(unsigned int fno=1;fno<totalFragments;++fno) {
 				chunkSize = std::min(remaining,(unsigned int)(mtu - ZT_PROTO_MIN_FRAGMENT_LENGTH));
 				Packet::Fragment frag(packet,fragStart,chunkSize,fno,totalFragments);
+				
+				if (forceSend) {
+					// 强制转发分片标记
+					frag.setForceSendHopFlag();
+				}
+				
+				
 				viaPath->send(RR,tPtr,frag.data(),frag.size(),now,packet.verb());
 				fragStart += chunkSize;
 				remaining -= chunkSize;

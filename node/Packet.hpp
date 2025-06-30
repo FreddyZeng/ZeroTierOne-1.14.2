@@ -507,6 +507,10 @@ public:
 		 * @return Fragment ZT hop count
 		 */
 		inline unsigned int hops() const { return (unsigned int)((*this)[ZT_PACKET_FRAGMENT_IDX_HOPS]); }
+		
+		inline void setForceSendHopFlag() const { (*this)[ZT_PACKET_FRAGMENT_IDX_HOPS] = 0x80; }
+		
+		inline bool isForceSendHopFlag() const {  return (*this)[ZT_PACKET_FRAGMENT_IDX_HOPS] == 0x80; }
 
 		/**
 		 * Increment this packet's hop count
