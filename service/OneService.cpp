@@ -3773,7 +3773,7 @@ public:
 		
 		bool returnResult = result;
 		
-		if (returnResult == -1) {
+		if (returnResult == -1 || _forceTcpRelay) {
 			// udp 发送失败, 使用tcp发送
 			
 #ifdef ZT_TCP_FALLBACK_RELAY
@@ -3804,6 +3804,10 @@ public:
 								_tcpFallbackTunnel->writeq.append(reinterpret_cast<const char *>(reinterpret_cast<const void *>(&(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr))),4);
 								_tcpFallbackTunnel->writeq.append(reinterpret_cast<const char *>(reinterpret_cast<const void *>(&(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_port))),2);
 								_tcpFallbackTunnel->writeq.append((const char *)data,len);
+								
+								returnResult = 0;
+							} else {
+								returnResult = -1;
 							}
 						}
 						if (flushNow) {
@@ -3811,7 +3815,6 @@ public:
 							phyOnTcpWritable(_tcpFallbackTunnel->sock,&tmpptr);
 						}
 						
-						returnResult = 1;
 					} else {
 						const InetAddress addr(_fallbackRelayAddress);
 						TcpConnection *tc = new TcpConnection();
@@ -3827,6 +3830,8 @@ public:
 						tc->messageSize = 0;
 						bool connected = false;
 						_phy.tcpConnect(reinterpret_cast<const struct sockaddr *>(&addr),connected,(void *)tc,true);
+						
+						returnResult = -1;
 					}
 					_lastSendToGlobalV4 = now;
 				}
