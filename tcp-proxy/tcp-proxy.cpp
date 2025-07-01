@@ -19,12 +19,21 @@
 // HACK! Will eventually use epoll() or something in Phy<> instead of select().
 // Also be sure to change ulimit -n and fs.file-max in /etc/sysctl.conf on relays.
 #if defined(__linux__) || defined(__LINUX__) || defined(__LINUX) || defined(LINUX)
-#include <linux/posix_types.h>
-#include <bits/types.h>
-#undef __FD_SETSIZE
-#define __FD_SETSIZE 1048576
-#undef FD_SETSIZE
-#define FD_SETSIZE 1048576
+// 如果是 Glibc，则继续包含 bits/types.h；否则用标准头替代
+#  if defined(__GLIBC__)
+#    include <linux/posix_types.h>
+#    include <bits/types.h>
+#  else
+#    include <sys/types.h>
+#    include <stdint.h>    // for uint*_t
+#    include <unistd.h>    // for ssize_t, off_t 等
+#  endif
+
+// 调整 FD_SETSIZE
+#  undef __FD_SETSIZE
+#  define __FD_SETSIZE 1048576
+#  undef FD_SETSIZE
+#  define FD_SETSIZE 1048576
 #endif
 
 #include <stdio.h>
