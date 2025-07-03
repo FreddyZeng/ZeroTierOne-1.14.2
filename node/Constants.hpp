@@ -395,7 +395,7 @@
 /**
  * How often to retry expired paths that we're still remembering
  */
-#define ZT_PEER_EXPIRED_PATH_TRIAL_PERIOD (ZT_PEER_PING_PERIOD * 10)
+#define ZT_PEER_EXPIRED_PATH_TRIAL_PERIOD (ZT_PEER_PING_PERIOD * 3)
 
 /**
  * Outgoing packets are only used for QoS/ACK statistical sampling if their
