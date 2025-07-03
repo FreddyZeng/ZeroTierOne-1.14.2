@@ -3745,10 +3745,13 @@ public:
 	inline int nodeWirePacketSendFunction(const int64_t localSocket,const struct sockaddr_storage *addr,const void *data,unsigned int len,unsigned int ttl,Packet::Verb verb)
 	{
 		
-//		const InetAddress *inetAddrPtr = reinterpret_cast<const InetAddress *>(addr);
-//		const SharedPtr<Path> path(_node->RR->topology->getPath(localSocket,inetAddrPtr));
-//		
-//		bool isTCPPath = path->isTCPPacket();
+		const InetAddress *inetAddrPtr = reinterpret_cast<const InetAddress *>(addr);
+		const SharedPtr<Path> path(_node->RR->topology->getPath(localSocket,inetAddrPtr));
+
+		const int64_t now = OSUtils::now();
+		bool isPathAlive = path->alive(now);
+		bool isTCPPath = path->isTCPPacket();
+		
 		
 		bool isForceTCP = false;
 		
@@ -3775,6 +3778,72 @@ public:
 			} else {
 				result = ((_binder.udpSendAll(_phy,addr,data,len,ttl)) ? 0 : -1);
 			}
+
+			
+#ifdef ZT_TCP_FALLBACK_RELAY
+		if(_allowTcpFallbackRelay && (!isPathAlive || isTCPPath)) {
+			if (addr->ss_family == AF_INET) {
+				// TCP fallback tunnel support, currently IPv4 only
+				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
+					// Engage TCP tunnel fallback if we haven't received anything valid from a global
+					// IP address in ZT_TCP_FALLBACK_AFTER milliseconds. If we do start getting
+					// valid direct traffic we'll stop using it and close the socket after a while.
+//					const int64_t now = OSUtils::now();
+					if (_tcpFallbackTunnel) {
+						bool flushNow = false;
+						{
+							Mutex::Lock _l(_tcpFallbackTunnel->writeq_m);
+							if (_tcpFallbackTunnel->writeq.size() < (1024 * 64)) {
+								if (_tcpFallbackTunnel->writeq.length() == 0) {
+									_phy.setNotifyWritable(_tcpFallbackTunnel->sock,true);
+									flushNow = true;
+								}
+								const unsigned long mlen = len + 7;
+								_tcpFallbackTunnel->writeq.push_back((char)0x17);
+								_tcpFallbackTunnel->writeq.push_back((char)0x03);
+								_tcpFallbackTunnel->writeq.push_back((char)0x03); // fake TLS 1.2 header
+								_tcpFallbackTunnel->writeq.push_back((char)((mlen >> 8) & 0xff));
+								_tcpFallbackTunnel->writeq.push_back((char)(mlen & 0xff));
+								_tcpFallbackTunnel->writeq.push_back((char)4); // IPv4
+								_tcpFallbackTunnel->writeq.append(reinterpret_cast<const char *>(reinterpret_cast<const void *>(&(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr))),4);
+								_tcpFallbackTunnel->writeq.append(reinterpret_cast<const char *>(reinterpret_cast<const void *>(&(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_port))),2);
+								_tcpFallbackTunnel->writeq.append((const char *)data,len);
+								
+								result = 0;
+							} else {
+								result = -1;
+							}
+						}
+						if (flushNow) {
+							void *tmpptr = (void *)_tcpFallbackTunnel;
+							phyOnTcpWritable(_tcpFallbackTunnel->sock,&tmpptr);
+						}
+						
+					} else {
+						const InetAddress addr(_fallbackRelayAddress);
+						TcpConnection *tc = new TcpConnection();
+						{
+							Mutex::Lock _l(_tcpConnections_m);
+							_tcpConnections.push_back(tc);
+						}
+						tc->type = TcpConnection::TCP_TUNNEL_OUTGOING;
+						tc->remoteAddr = addr;
+						tc->lastReceive = OSUtils::now();
+						tc->parent = this;
+						tc->sock = (PhySocket *)0; // set in connect handler
+						tc->messageSize = 0;
+						bool connected = false;
+						_phy.tcpConnect(reinterpret_cast<const struct sockaddr *>(&addr),connected,(void *)tc,true);
+						
+						result = -1;
+					}
+					_lastSendToGlobalV4 = now;
+				}
+			}
+		}
+		
+#endif // ZT_TCP_FALLBACK_RELAY
+			
 			
 			return result;
 			
@@ -3791,7 +3860,7 @@ public:
 					// Engage TCP tunnel fallback if we haven't received anything valid from a global
 					// IP address in ZT_TCP_FALLBACK_AFTER milliseconds. If we do start getting
 					// valid direct traffic we'll stop using it and close the socket after a while.
-					const int64_t now = OSUtils::now();
+//					const int64_t now = OSUtils::now();
 					if (_tcpFallbackTunnel) {
 						bool flushNow = false;
 						{

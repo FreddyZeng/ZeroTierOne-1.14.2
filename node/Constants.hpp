@@ -375,7 +375,7 @@
 /**
  * How frequently to send heartbeats over in-use paths
  */
-#define ZT_PATH_HEARTBEAT_PERIOD 14000
+#define ZT_PATH_HEARTBEAT_PERIOD 7000
 
 /**
  * Do not accept HELLOs over a given path more often than this
