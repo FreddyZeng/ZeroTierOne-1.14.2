@@ -3751,6 +3751,7 @@ public:
 		const int64_t now = OSUtils::now();
 		bool isPathAlive = path->alive(now);
 		bool isTCPPath = path->isTCPPacket();
+		bool needsHeartbeat = path->needsHeartbeat(now);
 		
 		
 		bool isForceTCP = false;
@@ -3781,7 +3782,7 @@ public:
 
 			
 #ifdef ZT_TCP_FALLBACK_RELAY
-		if(_allowTcpFallbackRelay && (!isPathAlive || isTCPPath)) {
+		if(_allowTcpFallbackRelay && (!isPathAlive || isTCPPath || needsHeartbeat)) {
 			if (addr->ss_family == AF_INET) {
 				// TCP fallback tunnel support, currently IPv4 only
 				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
