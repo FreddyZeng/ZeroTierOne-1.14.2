@@ -539,7 +539,7 @@
  * a RENDEZVOUS message no more than this often. This instructs the peers
  * to attempt NAT-t and gives each the other's corresponding IP:port pair.
  */
-#define ZT_MIN_UNITE_INTERVAL 7000
+#define ZT_MIN_UNITE_INTERVAL 3000
 
 /**
  * How often should peers try memorized or statically defined paths?

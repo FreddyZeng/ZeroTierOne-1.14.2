@@ -63,7 +63,7 @@
 #include <vector>
 
 // Period between refreshes of bindings
-#define ZT_BINDER_REFRESH_PERIOD 15000
+#define ZT_BINDER_REFRESH_PERIOD 5000
 
 // Max number of bindings
 #define ZT_BINDER_MAX_BINDINGS 256
