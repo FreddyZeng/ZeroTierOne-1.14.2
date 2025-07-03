@@ -296,17 +296,17 @@
 /**
  * Maximum number of packet fragments we'll support (protocol max: 16)
  */
-#define ZT_MAX_PACKET_FRAGMENTS 4
+#define ZT_MAX_PACKET_FRAGMENTS 7
 
 /**
  * Size of RX queue
  */
-#define ZT_RX_QUEUE_SIZE 64
+#define ZT_RX_QUEUE_SIZE 32
 
 /**
  * Size of TX queue
  */
-#define ZT_TX_QUEUE_SIZE 64
+#define ZT_TX_QUEUE_SIZE 32
 
 /**
  * Minimum delay between timer task checks to prevent thrashing
@@ -326,7 +326,7 @@
 /**
  * Transmit queue entry timeout
  */
-#define ZT_TRANSMIT_QUEUE_TIMEOUT 3000
+#define ZT_TRANSMIT_QUEUE_TIMEOUT 5000
 
 /**
  * Receive queue entry timeout
@@ -348,7 +348,7 @@
 /**
  * Period for multicast LIKE announcements
  */
-#define ZT_MULTICAST_ANNOUNCE_PERIOD 5000
+#define ZT_MULTICAST_ANNOUNCE_PERIOD 60000
 
 /**
  * Delay between explicit MULTICAST_GATHER requests for a given multicast channel
@@ -365,17 +365,17 @@
 /**
  * Delay between checks of peer pings, etc., and also related housekeeping tasks
  */
-#define ZT_PING_CHECK_INTERVAL 2000
+#define ZT_PING_CHECK_INTERVAL 5000
 
 /**
  * How often the local.conf file is checked for changes (service, should be moved there)
  */
-#define ZT_LOCAL_CONF_FILE_CHECK_INTERVAL 5000
+#define ZT_LOCAL_CONF_FILE_CHECK_INTERVAL 10000
 
 /**
  * How frequently to send heartbeats over in-use paths
  */
-#define ZT_PATH_HEARTBEAT_PERIOD 3000
+#define ZT_PATH_HEARTBEAT_PERIOD 14000
 
 /**
  * Do not accept HELLOs over a given path more often than this
@@ -385,7 +385,7 @@
 /**
  * Delay between full-fledge pings of directly connected peers
  */
-#define ZT_PEER_PING_PERIOD 15000
+#define ZT_PEER_PING_PERIOD 60000
 
 /**
  * Paths are considered expired if they have not sent us a real packet in this long
@@ -395,7 +395,7 @@
 /**
  * How often to retry expired paths that we're still remembering
  */
-#define ZT_PEER_EXPIRED_PATH_TRIAL_PERIOD (ZT_PEER_PING_PERIOD * 3)
+#define ZT_PEER_EXPIRED_PATH_TRIAL_PERIOD (ZT_PEER_PING_PERIOD * 10)
 
 /**
  * Outgoing packets are only used for QoS/ACK statistical sampling if their
@@ -458,7 +458,7 @@
 /**
  * Interval used for rate-limiting the computation of path quality estimates.
  */
-#define ZT_QOS_COMPUTE_INTERVAL 500
+#define ZT_QOS_COMPUTE_INTERVAL 1000
 
 /**
  * Number of samples to consider when processing real-time path statistics
@@ -473,7 +473,7 @@
 /**
  * Max allowable time spent in any queue (in ms)
  */
-#define ZT_AQM_TARGET 2
+#define ZT_AQM_TARGET 5
 
 /**
  * Time period where the time spent in the queue by a packet should fall below.
@@ -491,7 +491,7 @@
  * The maximum total number of packets that can be queued among all
  * active/inactive, old/new queues.
  */
-#define ZT_AQM_MAX_ENQUEUED_PACKETS 2048
+#define ZT_AQM_MAX_ENQUEUED_PACKETS 1024
 
 /**
  * Number of QoS queues (buckets)
@@ -509,9 +509,9 @@
  * Timeout for overall peer activity (measured from last receive)
  */
 #ifndef ZT_SDK
-#define ZT_PEER_ACTIVITY_TIMEOUT 20000
+#define ZT_PEER_ACTIVITY_TIMEOUT 500000
 #else
-#define ZT_PEER_ACTIVITY_TIMEOUT 10000
+#define ZT_PEER_ACTIVITY_TIMEOUT 30000
 #endif
 
 /**
@@ -530,7 +530,7 @@
  * Don't lengthen this as it affects things like QoS / uptime monitoring
  * via ZeroTier Central. This is the heartbeat, basically.
  */
-#define ZT_NETWORK_AUTOCONF_DELAY 5000
+#define ZT_NETWORK_AUTOCONF_DELAY 60000
 
 /**
  * Minimum interval between attempts by relays to unite peers
@@ -544,7 +544,7 @@
 /**
  * How often should peers try memorized or statically defined paths?
  */
-#define ZT_TRY_MEMORIZED_PATH_INTERVAL 5000
+#define ZT_TRY_MEMORIZED_PATH_INTERVAL 30000
 
 /**
  * Sanity limit on maximum bridge routes
@@ -565,17 +565,17 @@
 /**
  * Interval between direct path pushes in milliseconds
  */
-#define ZT_DIRECT_PATH_PUSH_INTERVAL 2000
+#define ZT_DIRECT_PATH_PUSH_INTERVAL 7000
 
 /**
  * Interval between direct path pushes in milliseconds if we already have a path
  */
-#define ZT_DIRECT_PATH_PUSH_INTERVAL_HAVEPATH 5000
+#define ZT_DIRECT_PATH_PUSH_INTERVAL_HAVEPATH 60000
 
 /**
  * Time horizon for push direct paths cutoff
  */
-#define ZT_PUSH_DIRECT_PATHS_CUTOFF_TIME 3000
+#define ZT_PUSH_DIRECT_PATHS_CUTOFF_TIME 7000
 
 /**
  * Drainage constants for VERB_ECHO rate-limiters
@@ -636,7 +636,7 @@
 /**
  * Minimum allowed amount of time between flow/path optimizations (anti-flapping)
  */
-#define ZT_BOND_OPTIMIZE_INTERVAL 5000
+#define ZT_BOND_OPTIMIZE_INTERVAL 15000
 
 /**
  * Maximum number of flows allowed before we start forcibly forgetting old ones
@@ -653,7 +653,7 @@
  * used while searching for default or alternative paths to try in the absence
  * of direct guidance from the user or a selection policy.
  */
-#define ZT_BOND_FAILOVER_DEFAULT_INTERVAL 3000
+#define ZT_BOND_FAILOVER_DEFAULT_INTERVAL 5000
 
 /**
  * Anything below this value gets into thrashing territory since we divide
@@ -665,7 +665,7 @@
  * How many times per failover interval that an ECHO is sent. This should be
  * at least 2. Anything more then 4 starts to increase overhead significantly.
  */
-#define ZT_BOND_ECHOS_PER_FAILOVER_INTERVAL 5
+#define ZT_BOND_ECHOS_PER_FAILOVER_INTERVAL 3
 
 /**
  * A defensive timer to prevent path quality metrics from being
@@ -746,7 +746,7 @@
 /**
  * Desired buffer size for UDP sockets (used in service and osdep but defined here)
  */
-#define ZT_UDP_DESIRED_BUF_SIZE 2097152
+#define ZT_UDP_DESIRED_BUF_SIZE 1048576
 
 /**
  * Desired / recommended min stack size for threads (used on some platforms to reset thread stack size)
