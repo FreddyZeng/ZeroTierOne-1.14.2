@@ -38,6 +38,15 @@ struct PathWithQuality {
 
 	// 定义比较操作符，方便排序
 	bool operator<(const PathWithQuality& other) const {
+		
+		if (path->isTCPPacket() != other->isTCPPacket()) {
+			if (!path->isTCPPacket()) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		
 		return quality < other.quality;
 	}
 };
@@ -368,18 +377,25 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 	}
 	
 	unsigned int bestUDPPath = ZT_MAX_PEER_NETWORK_PATHS;
+	unsigned int bestTCPPath = ZT_MAX_PEER_NETWORK_PATHS;
 	/**
 	 * Send traffic across the highest quality path only. This algorithm will still
 	 * use the old path quality metric from protocol version 9.
 	 */
 	long bestPathQuality = 2147483647;
+	long bestTCPPathQuality = 2147483647;
 	for(unsigned int i=0;i<ZT_MAX_PEER_NETWORK_PATHS;++i) {
 		if (_paths[i].p) {
 			if ((includeExpired)||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
 				const long q = _paths[i].p->quality(now) / _paths[i].priority;
-				if (q <= bestPathQuality) {
+				if (q <= bestPathQuality && !_paths[i].p->isTCPPacket()) {
 					bestPathQuality = q;
 					bestUDPPath = i;
+				}
+				
+				if (q <= bestTCPPathQuality && _paths[i].p->isTCPPacket())) {
+					bestTCPPathQuality = q;
+					bestTCPPath = i;
 				}
 			}
 		} else {
@@ -389,6 +405,10 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 	
 	if (bestUDPPath != ZT_MAX_PEER_NETWORK_PATHS) {
 		return _paths[bestUDPPath].p;
+	}
+	
+	if (bestTCPPath != ZT_MAX_PEER_NETWORK_PATHS) {
+		return _paths[bestTCPPath].p;
 	}
 	
 	return SharedPtr<Path>();
