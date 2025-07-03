@@ -39,7 +39,7 @@ struct PathWithQuality {
 	// 定义比较操作符，方便排序
 	bool operator<(const PathWithQuality& other) const {
 		
-		if (path->isTCPPacket() != other->isTCPPacket()) {
+		if (path->isTCPPacket() != other.path->isTCPPacket()) {
 			if (!path->isTCPPacket()) {
 				return true;
 			} else {
@@ -393,7 +393,7 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 					bestUDPPath = i;
 				}
 				
-				if (q <= bestTCPPathQuality && _paths[i].p->isTCPPacket())) {
+				if (q <= bestTCPPathQuality && _paths[i].p->isTCPPacket()) {
 					bestTCPPathQuality = q;
 					bestTCPPath = i;
 				}
