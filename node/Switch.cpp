@@ -132,7 +132,7 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 					
 					bool isForceSendHopFlag = fragment.isForceSendHopFlag(); // 强制转发分片标记
 
-					if (fragment.hops() < ZT_RELAY_MAX_HOPS || isForceSendHopFlag) {
+					if (fragment.hops() < ZT_RELAY_MAX_HOPS) {
 						fragment.incrementHops();
 						
 						if (isForceSendHopFlag) {
@@ -233,7 +233,7 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 					}
 					
 
-					if (packet.hops() < ZT_RELAY_MAX_HOPS || forceSend) {
+					if (packet.hops() < ZT_RELAY_MAX_HOPS) {
 						packet.incrementHops();
 						SharedPtr<Peer> relayTo = RR->topology->getPeer(tPtr,destination);
 						if ((relayTo)&&(relayTo->sendDirect(tPtr,packet.data(),packet.size(),now,false))) {
