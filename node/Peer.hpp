@@ -155,7 +155,7 @@ public:
 	{
 		// 1. Get the list of all appropriate paths, sorted by quality.
 		// Note: We are passing a default flowId of 0 since the original function didn't use it.
-		std::vector<SharedPtr<Path>> paths = getAppropriatePathList(now, force, 0);
+		std::vector<SharedPtr<Path>> paths = getAppropriatePathList(now, force);
 
 		// 2. Iterate through each path in the list.
 		for (const auto& path : paths) {
@@ -171,49 +171,8 @@ public:
 		}
 
 		return false;
-//		return sendDirectByTCP(tPtr, data, len, now, force);
 	}
 	
-	/**
-	 * Send via best direct path
-	 *
-	 * @param tPtr Thread pointer to be handed through to any callbacks called as a result of this call
-	 * @param data Packet data
-	 * @param len Packet length
-	 * @param now Current time
-	 * @param force If true, send even if path is not alive
-	 * @return True if we actually sent something
-	 */
-//	inline bool sendDirectByTCP(void *tPtr,const void *data,unsigned int len,int64_t now,bool force)
-//	{
-//		SharedPtr<Path> bp(getAppropriatePathByTCP(now,force));
-//		if (bp) {
-//			// 关键快速连接
-//			return bp->send(RR,tPtr,data,len,now,Packet::VERB_FORCETCP);
-//		}
-//		return false;
-//	}
-	inline bool sendDirectByTCP(void *tPtr,const void *data,unsigned int len,int64_t now,bool force)
-	{
-		// 1. Get the list of all appropriate paths, sorted by quality.
-		// Note: We are passing a default flowId of 0 since the original function didn't use it.
-		std::vector<SharedPtr<Path>> paths = getAppropriatePathListByTCP(now, force, 0);
-
-		// 2. Iterate through each path in the list.
-		for (const auto& path : paths) {
-			if (path) {
-				// 3. Attempt to send data on the current path.
-				// The send parameters (RR, VERB_NOTCP, etc.) are preserved from the original.
-				if (path->send(RR,tPtr,data,len,now,Packet::VERB_FORCETCP)) {
-					// 4. If send() returns true, it was successful.
-					// Stop the loop immediately and return true from sendDirect.
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
 
 	/**
 	 * Record incoming packets to
@@ -259,10 +218,7 @@ public:
 	 */
 	SharedPtr<Path> getAppropriatePath(int64_t now, bool includeExpired, int32_t flowId = -1);
 	
-	SharedPtr<Path> getAppropriatePathByTCP(int64_t now, bool includeExpired, int32_t flowId = -1);
-	
-	std::vector<SharedPtr<Path>> getAppropriatePathList(int64_t now, bool includeExpired, int32_t flowId);
-	std::vector<SharedPtr<Path>> getAppropriatePathListByTCP(int64_t now, bool includeExpired, int32_t flowId);
+	std::vector<SharedPtr<Path>> getAppropriatePathList(int64_t now, bool includeExpired, int32_t flowId = -1);
 
 	/**
 	 * Send VERB_RENDEZVOUS to this and another peer via the best common IP scope and path

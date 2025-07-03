@@ -375,9 +375,9 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 	long bestPathQuality = 2147483647;
 	for(unsigned int i=0;i<ZT_MAX_PEER_NETWORK_PATHS;++i) {
 		if (_paths[i].p) {
-			if ((includeExpired && !_paths[i].p->isTCPPacket())||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
+			if ((includeExpired)||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
 				const long q = _paths[i].p->quality(now) / _paths[i].priority;
-				if (q <= bestPathQuality && !_paths[i].p->isTCPPacket()) {
+				if (q <= bestPathQuality) {
 					bestPathQuality = q;
 					bestUDPPath = i;
 				}
@@ -446,142 +446,6 @@ std::vector<SharedPtr<Path>> Peer::getAppropriatePathList(int64_t now, bool incl
 	}
 	
 	return appropriatePaths;
-}
-
-// flowId 获取path
-SharedPtr<Path> Peer::getAppropriatePathByTCP(int64_t now, bool includeExpired, int32_t flowId)
-{
-	Mutex::Lock _l(_paths_m);
-	Mutex::Lock _lb(_bond_m);
-	if(_bond && _bond->isReady()) {
-		return _bond->getAppropriatePath(now, flowId);
-	}
-	
-//	unsigned int bestUDPPath = ZT_MAX_PEER_NETWORK_PATHS;
-//	/**
-//	 * Send traffic across the highest quality path only. This algorithm will still
-//	 * use the old path quality metric from protocol version 9.
-//	 */
-//	long bestPathQuality = 2147483647;
-//	for(unsigned int i=0;i<ZT_MAX_PEER_NETWORK_PATHS;++i) {
-//		if (_paths[i].p) {
-//			if ((!_paths[i].p->isTCPPacket()) && ((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
-//				const long q = _paths[i].p->quality(now) / _paths[i].priority;
-//				if (q <= bestPathQuality && !_paths[i].p->isTCPPacket()) {
-//					bestPathQuality = q;
-//					bestUDPPath = i;
-//				}
-//			}
-//		} else {
-//			break;
-//		}
-//	}
-//	
-//	if (bestUDPPath != ZT_MAX_PEER_NETWORK_PATHS) {
-//		// 如果存在活跃的udp path, 就返回udp path,不返回tcp
-//		return _paths[bestUDPPath].p;
-//	}
-	
-	unsigned int bestPath = ZT_MAX_PEER_NETWORK_PATHS;
-	/**
-	 * Send traffic across the highest quality path only. This algorithm will still
-	 * use the old path quality metric from protocol version 9.
-	 */
-	long bestPathQuality = 2147483647;
-	for(unsigned int i=0;i<ZT_MAX_PEER_NETWORK_PATHS;++i) {
-		if (_paths[i].p) {
-			if ((includeExpired && !_paths[i].p->isTCPPacket())||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
-				const long q = _paths[i].p->quality(now) / _paths[i].priority;
-				if (q <= bestPathQuality) {
-					bestPathQuality = q;
-					bestPath = i;
-				}
-			}
-		} else {
-			break;
-		}
-	}
-	
-	if (bestPath != ZT_MAX_PEER_NETWORK_PATHS) {
-		return _paths[bestPath].p;
-	}
-	return SharedPtr<Path>();
-}
-
-/**
- * @brief 获取所有适用的路径，优先返回UDP路径列表，若无则返回TCP路径列表。
- *
- * @param now 当前时间戳
- * @param includeExpired 是否包含已过期的路径
- * @param flowId 流ID (主要用于bond)
- * @return 包含所有适用路径且已排序的向量(vector)。优先返回UDP路径。
- */
-std::vector<SharedPtr<Path>> Peer::getAppropriatePathListByTCP(int64_t now, bool includeExpired, int32_t flowId)
-{
-	Mutex::Lock _l(_paths_m);
-	Mutex::Lock _lb(_bond_m);
-
-	// 1. 如果存在一个就绪的bond，它将负责路径选择，我们直接返回其结果。
-	if(_bond && _bond->isReady()) {
-		std::vector<SharedPtr<Path>> appropriatePaths;
-		SharedPtr<Path> bondPath = _bond->getAppropriatePath(now, flowId);
-		if (bondPath) {
-			appropriatePaths.push_back(bondPath);
-		}
-		return appropriatePaths;
-	}
-
-	std::vector<PathWithQuality> udpPaths;
-	std::vector<PathWithQuality> tcpPaths;
-
-	// 2. 遍历所有路径一次，将它们分类为UDP和TCP两个列表
-	for(unsigned int i = 0; i < ZT_MAX_PEER_NETWORK_PATHS; ++i) {
-		if (_paths[i].p) {
-			// 检查路径是否活跃，或者是否要包含过期路径
-			if (includeExpired || ((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
-				const long q = _paths[i].p->quality(now) / _paths[i].priority;
-				
-				if (_paths[i].p->isTCPPacket()) {
-					tcpPaths.push_back({_paths[i].p, q});
-				} else {
-					udpPaths.push_back({_paths[i].p, q});
-				}
-			}
-		} else {
-			break;
-		}
-	}
-
-//	// 3. 优先返回UDP路径
-//	if (!udpPaths.empty()) {
-//		// 对UDP路径按质量排序
-//		std::sort(udpPaths.begin(), udpPaths.end());
-//		
-//		// 准备最终返回的列表
-//		std::vector<SharedPtr<Path>> resultPaths;
-//		resultPaths.reserve(udpPaths.size());
-//		for (const auto& pq : udpPaths) {
-//			resultPaths.push_back(pq.path);
-//		}
-//		return resultPaths;
-//	}
-
-	// 4. 如果没有可用的UDP路径，则回退到TCP路径
-	if (!tcpPaths.empty()) {
-		// 对TCP路径按质量排序
-		std::sort(tcpPaths.begin(), tcpPaths.end());
-
-		// 准备最终返回的列表
-		std::vector<SharedPtr<Path>> resultPaths;
-		resultPaths.reserve(tcpPaths.size());
-		for (const auto& pq : tcpPaths) {
-			resultPaths.push_back(pq.path);
-		}
-		return resultPaths;
-	}
-	
-	// 5. 如果没有任何可用路径，返回空列表
-	return std::vector<SharedPtr<Path>>();
 }
 
 void Peer::introduce(void *const tPtr,const int64_t now,const SharedPtr<Peer> &other) const
