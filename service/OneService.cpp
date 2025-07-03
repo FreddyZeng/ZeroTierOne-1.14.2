@@ -3745,15 +3745,21 @@ public:
 	inline int nodeWirePacketSendFunction(const int64_t localSocket,const struct sockaddr_storage *addr,const void *data,unsigned int len,unsigned int ttl,Packet::Verb verb)
 	{
 		
-		const InetAddress *inetAddrPtr = reinterpret_cast<const InetAddress *>(addr);
-		const SharedPtr<Path> path(_node->RR->topology->getPath(localSocket,inetAddrPtr));
+//		const InetAddress *inetAddrPtr = reinterpret_cast<const InetAddress *>(addr);
+//		const SharedPtr<Path> path(_node->RR->topology->getPath(localSocket,inetAddrPtr));
+//		
+//		bool isTCPPath = path->isTCPPacket();
 		
-		bool isTCPPath = path->isTCPPacket();
+		bool isForceTCP = false;
+		
+		if (verb == Packet::VERB_FORCETCP) {
+			isForceTCP = true;
+		}
 		
 		
 		bool result = -1;
 		
-		if (!_forceTcpRelay && !isTCPPath) {
+		if (!_forceTcpRelay && !isForceTCP) {
 			// Even when relaying we still send via UDP. This way if UDP starts
 			// working we can instantly "fail forward" to it and stop using TCP
 			// proxy fallback, which is slow.
@@ -3769,12 +3775,13 @@ public:
 			} else {
 				result = ((_binder.udpSendAll(_phy,addr,data,len,ttl)) ? 0 : -1);
 			}
-		}
+			
+			return result;
+			
+		} else {
+			
 		
-		bool returnResult = result;
-		
-		if (returnResult == -1 || _forceTcpRelay) {
-			// udp 发送失败, 使用tcp发送
+			bool returnResult = -1;
 			
 #ifdef ZT_TCP_FALLBACK_RELAY
 		if(_allowTcpFallbackRelay) {
@@ -3840,11 +3847,9 @@ public:
 		
 #endif // ZT_TCP_FALLBACK_RELAY
 			
-			
+			return returnResult;
 			
 		}
-		
-		return returnResult;
 
 	}
 
