@@ -3753,6 +3753,23 @@ public:
 		bool isTCPPath = path->isTCPPacket();
 		bool needsHeartbeat = path->needsHeartbeat(now);
 		
+		bool forceSend = false;
+		
+		if (verb == Packet::VERB_HELLO ||
+			verb == Packet::VERB_ERROR ||
+			verb == Packet::VERB_WHOIS ||
+			verb == Packet::VERB_RENDEZVOUS ||
+			verb == Packet::VERB_PUSH_DIRECT_PATHS ||
+			verb == Packet::VERB_PATH_NEGOTIATION_REQUEST ||
+			verb == Packet::VERB_NETWORK_CONFIG_REQUEST ||
+			verb == Packet::VERB_NETWORK_CONFIG ||
+			verb == Packet::VERB_NETWORK_CREDENTIALS) {
+			
+			forceSend = true;
+		}
+		
+		bool forceUpLinkPacket = ((needsHeartbeat || !isPathAlive) && forceSend);
+		
 		
 		bool isForceTCP = false;
 		
@@ -3782,7 +3799,7 @@ public:
 
 			
 #ifdef ZT_TCP_FALLBACK_RELAY
-		if(_allowTcpFallbackRelay && (!isPathAlive || isTCPPath || needsHeartbeat)) {
+		if(_allowTcpFallbackRelay && (isTCPPath || forceUpLinkPacket)) {
 			if (addr->ss_family == AF_INET) {
 				// TCP fallback tunnel support, currently IPv4 only
 				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
