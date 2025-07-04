@@ -19,6 +19,22 @@ namespace ZeroTier {
 
 bool Path::send(const RuntimeEnvironment *RR,void *tPtr,const void *data,unsigned int len,int64_t now,Packet::Verb verb)
 {
+	const SharedPtr<Peer> peer(_node->RR->topology->getPeerNoCache(path->peerAddress()));
+
+	if (peer) {
+		if (needsHeartbeat(now) && alive(now)) {
+			if ((now - _lastOut > 3000) || _lastOut == 0) {
+				_lastOut = now;
+				peer->attemptToContactAt(tptr,_localSocket,_localSocket,now,false);
+			}
+		} else if (!alive(now)) {
+			if ((now - _lastOut > 3000) || _lastOut == 0) {
+				_lastOut = now;
+				peer->sendHELLO(tptr,_localSocket,_addr,now);
+			}
+		}
+	}
+	
 	// 根据这个path是否是tcp ok创建的,如果是就需要强制执行tcp的路径转发
 	if (RR->node->putPacket(tPtr,_localSocket,_addr,data,len,0,verb)) {
 		_lastOut = now;

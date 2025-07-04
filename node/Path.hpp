@@ -28,6 +28,7 @@
 #include "Utils.hpp"
 #include "Packet.hpp"
 #include "RingBuffer.hpp"
+#include "Address.hpp"
 
 /**
  * Maximum return value of preferenceRank()
@@ -100,7 +101,8 @@ public:
 		_latency(0xffff),
 		_addr(),
 		_ipScope(InetAddress::IP_SCOPE_NONE),
-		_isTCPPacket(false)
+		_isTCPPacket(false),
+		_peerAddress(Address(0))
 		{}
 
 	Path(const int64_t localSocket,const InetAddress &addr) :
@@ -124,7 +126,8 @@ public:
 		_latency(0xffff),
 		_addr(addr),
 		_ipScope(addr.ipScope()),
-		_isTCPPacket(false)
+		_isTCPPacket(false),
+		_peerAddress(Address(0))
 	{}
 
 	/**
@@ -379,6 +382,10 @@ public:
 	}
 	
 	inline void setTCPPacket(bool isTCPPacket) { _isTCPPacket = isTCPPacket; }
+	
+	inline const Address &peerAddress() const { return _peerAddress; }
+	
+	inline void setPeerAddress(const Address &peerAddress) { _peerAddress = peerAddress; }
 
 private:
 
@@ -411,6 +418,8 @@ private:
 	AtomicCounter __refCount;
 	
 	bool _isTCPPacket;
+	
+	Address _peerAddress;
 };
 
 } // namespace ZeroTier
