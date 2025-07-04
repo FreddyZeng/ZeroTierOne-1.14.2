@@ -14,23 +14,26 @@
 #include "Path.hpp"
 #include "RuntimeEnvironment.hpp"
 #include "Node.hpp"
+#include "Topology.hpp"
+#include "Peer.hpp"
+
 
 namespace ZeroTier {
 
 bool Path::send(const RuntimeEnvironment *RR,void *tPtr,const void *data,unsigned int len,int64_t now,Packet::Verb verb)
 {
-	const SharedPtr<Peer> peer(RR->topology->getPeerNoCache(path->peerAddress()));
+	const SharedPtr<Peer> peer(RR->topology->getPeerNoCache(peerAddress()));
 
 	if (peer) {
 		if (needsHeartbeat(now) && alive(now)) {
 			if ((now - _lastOut > 3000) || _lastOut == 0) {
 				_lastOut = now;
-				peer->attemptToContactAt(tptr,_localSocket,_localSocket,now,false);
+				peer->attemptToContactAt(tPtr,_localSocket,_addr,now,false);
 			}
 		} else if (!alive(now)) {
 			if ((now - _lastOut > 3000) || _lastOut == 0) {
 				_lastOut = now;
-				peer->sendHELLO(tptr,_localSocket,_addr,now);
+				peer->sendHELLO(tPtr,_localSocket,_addr,now);
 			}
 		}
 	}
