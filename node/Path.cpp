@@ -26,13 +26,13 @@ bool Path::send(const RuntimeEnvironment *RR,void *tPtr,const void *data,unsigne
 
 	if (peer) {
 		if (needsHeartbeat(now) && alive(now)) {
-			if ((now - _lastOut > 3000) || _lastOut == 0) {
-				_lastOut = now;
+			if ((now - _lastSendHello > 3000) || _lastSendHello == 0) {
+				_lastSendHello = now;
 				peer->attemptToContactAt(tPtr,_localSocket,_addr,now,false);
 			}
 		} else if (!alive(now)) {
-			if ((now - _lastOut > 3000) || _lastOut == 0) {
-				_lastOut = now;
+			if ((now - _lastSendHello > 3000) || _lastSendHello == 0) {
+				_lastSendHello = now;
 				peer->sendHELLO(tPtr,_localSocket,_addr,now);
 			}
 		}

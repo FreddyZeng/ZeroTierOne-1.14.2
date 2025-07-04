@@ -81,6 +81,7 @@ public:
 	};
 
 	Path() :
+		_lastSendHello(0),
 		_lastOut(0),
 		_lastIn(0),
 		_lastTrustEstablishedPacketReceived(0),
@@ -106,6 +107,7 @@ public:
 		{}
 
 	Path(const int64_t localSocket,const InetAddress &addr) :
+		_lastSendHello(0),
 		_lastOut(0),
 		_lastIn(0),
 		_lastTrustEstablishedPacketReceived(0),
@@ -391,6 +393,7 @@ private:
 
 	char _ifname[ZT_MAX_PHYSIFNAME] = { };
 
+	volatile int64_t _lastSendHello;
 	volatile int64_t _lastOut;
 	volatile int64_t _lastIn;
 	volatile int64_t _lastTrustEstablishedPacketReceived;
