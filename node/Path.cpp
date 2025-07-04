@@ -19,7 +19,7 @@ namespace ZeroTier {
 
 bool Path::send(const RuntimeEnvironment *RR,void *tPtr,const void *data,unsigned int len,int64_t now,Packet::Verb verb)
 {
-	const SharedPtr<Peer> peer(_node->RR->topology->getPeerNoCache(path->peerAddress()));
+	const SharedPtr<Peer> peer(RR->topology->getPeerNoCache(path->peerAddress()));
 
 	if (peer) {
 		if (needsHeartbeat(now) && alive(now)) {
