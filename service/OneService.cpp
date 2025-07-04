@@ -3782,7 +3782,7 @@ public:
 
 			
 #ifdef ZT_TCP_FALLBACK_RELAY
-		if(_allowTcpFallbackRelay && (!isPathAlive || isTCPPath || needsHeartbeat)) {
+		if(_allowTcpFallbackRelay && (isTCPPath)) {
 			if (addr->ss_family == AF_INET) {
 				// TCP fallback tunnel support, currently IPv4 only
 				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {

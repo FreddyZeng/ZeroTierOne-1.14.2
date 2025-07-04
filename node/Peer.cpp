@@ -386,6 +386,7 @@ SharedPtr<Path> Peer::getAppropriatePath(int64_t now, bool includeExpired, int32
 	long bestTCPPathQuality = 2147483647;
 	for(unsigned int i=0;i<ZT_MAX_PEER_NETWORK_PATHS;++i) {
 		if (_paths[i].p) {
+			_paths[i].p->setPeerAddress(address());
 			if ((includeExpired)||((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
 				const long q = _paths[i].p->quality(now) / _paths[i].priority;
 				if (q <= bestPathQuality && !_paths[i].p->isTCPPacket()) {
@@ -442,6 +443,7 @@ std::vector<SharedPtr<Path>> Peer::getAppropriatePathList(int64_t now, bool incl
 	// 步骤2: 遍历所有路径，计算质量，并存入临时向量
 	for(unsigned int i = 0; i < ZT_MAX_PEER_NETWORK_PATHS; ++i) {
 		if (_paths[i].p) {
+			_paths[i].p->setPeerAddress(address());
 			// 路径必须是活跃的(或允许包含过期的)，并且不能是TCP路径
 			if ((includeExpired || ((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) && !_paths[i].p->isTCPPacket()) {
 				// 使用与原始代码完全相同的逻辑计算质量
