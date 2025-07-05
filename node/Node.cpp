@@ -212,10 +212,11 @@ ZT_ResultCode Node::processWirePacket(
 	const void *packetData,
 	unsigned int packetLength,
 	volatile int64_t *nextBackgroundTaskDeadline,
-	bool isTCPPacket)
+	bool isTCPPacket,
+	bool isTCPRelaySendPacket)
 {
 	_now = now;
-	RR->sw->onRemotePacket(tptr,localSocket,*(reinterpret_cast<const InetAddress *>(remoteAddress)),packetData,packetLength,isTCPPacket);
+	RR->sw->onRemotePacket(tptr,localSocket,*(reinterpret_cast<const InetAddress *>(remoteAddress)),packetData,packetLength,isTCPPacket,isTCPRelaySendPacket);
 	return ZT_RESULT_OK;
 }
 
@@ -949,10 +950,11 @@ enum ZT_ResultCode ZT_Node_processWirePacket(
 	const void *packetData,
 	unsigned int packetLength,
 	volatile int64_t *nextBackgroundTaskDeadline,
-	bool isTCPPacket)
+	bool isTCPPacket,
+	bool isTCPRelaySendPacket)
 {
 	try {
-		return reinterpret_cast<ZeroTier::Node *>(node)->processWirePacket(tptr,now,localSocket,remoteAddress,packetData,packetLength,nextBackgroundTaskDeadline,isTCPPacket);
+		return reinterpret_cast<ZeroTier::Node *>(node)->processWirePacket(tptr,now,localSocket,remoteAddress,packetData,packetLength,nextBackgroundTaskDeadline,isTCPPacket,isTCPRelaySendPacket);
 	} catch (std::bad_alloc &exc) {
 		return ZT_RESULT_FATAL_ERROR_OUT_OF_MEMORY;
 	} catch ( ... ) {

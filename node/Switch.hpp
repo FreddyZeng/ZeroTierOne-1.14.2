@@ -78,7 +78,7 @@ public:
 	 * @param data Packet data
 	 * @param len Packet length
 	 */
-	void onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddress &fromAddr,const void *data,unsigned int len,bool isTCPPacket);
+	void onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddress &fromAddr,const void *data,unsigned int len,bool isTCPPacket,bool isTCPRelaySendPacket);
 
 	/**
 	 * Returns whether our bonding or balancing policy is aware of flows.

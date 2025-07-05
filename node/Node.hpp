@@ -77,7 +77,8 @@ public:
 		const void *packetData,
 		unsigned int packetLength,
 		volatile int64_t *nextBackgroundTaskDeadline,
-		bool isTCPPacket);
+		bool isTCPPacket,
+		bool isTCPRelaySendPacket);
 	ZT_ResultCode processVirtualNetworkFrame(
 		void *tptr,
 		int64_t now,

@@ -3110,7 +3110,7 @@ public:
 		}
 		
 		// 来自udp的数据包(可能经过中继,另外的一端是tcp)
-		const ZT_ResultCode rc = _node->processWirePacket(nullptr,now,reinterpret_cast<int64_t>(sock),reinterpret_cast<const struct sockaddr_storage *>(from),data,len,&_nextBackgroundTaskDeadline,isTCPPacket);
+		const ZT_ResultCode rc = _node->processWirePacket(nullptr,now,reinterpret_cast<int64_t>(sock),reinterpret_cast<const struct sockaddr_storage *>(from),data,len,&_nextBackgroundTaskDeadline,isTCPPacket,false);
 		if (ZT_ResultCode_isFatal(rc)) {
 			char tmp[256];
 			OSUtils::ztsnprintf(tmp,sizeof(tmp),"fatal error code from processWirePacket: %d",(int)rc);
@@ -3279,6 +3279,7 @@ public:
 										data,
 										plen,
 										&_nextBackgroundTaskDeadline,
+										true,
 										true);
 									if (ZT_ResultCode_isFatal(rc)) {
 										char tmp[256];

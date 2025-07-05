@@ -100,7 +100,8 @@ public:
 		_latency(0xffff),
 		_addr(),
 		_ipScope(InetAddress::IP_SCOPE_NONE),
-		_isTCPPacket(false)
+		_isTCPPacket(false),
+		_isTCPRelaySendPacket(false)
 		{}
 
 	Path(const int64_t localSocket,const InetAddress &addr) :
@@ -124,7 +125,8 @@ public:
 		_latency(0xffff),
 		_addr(addr),
 		_ipScope(addr.ipScope()),
-		_isTCPPacket(false)
+		_isTCPPacket(false),
+	    _isTCPRelaySendPacket(false)
 	{}
 
 	/**
@@ -379,6 +381,12 @@ public:
 	}
 	
 	inline void setTCPPacket(bool isTCPPacket) { _isTCPPacket = isTCPPacket; }
+	
+	inline bool isTCPRelaySendPacket() const {
+		return _isTCPRelaySendPacket;
+	}
+	
+	inline void setTCPRelaySendPacket(bool isTCPRelaySendPacket) { _isTCPRelaySendPacket = isTCPRelaySendPacket; }
 
 private:
 
@@ -411,6 +419,7 @@ private:
 	AtomicCounter __refCount;
 	
 	bool _isTCPPacket;
+	bool _isTCPRelaySendPacket;
 };
 
 } // namespace ZeroTier

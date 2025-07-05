@@ -1827,7 +1827,8 @@ ZT_SDK_API enum ZT_ResultCode ZT_Node_processWirePacket(
 	const void *packetData,
 	unsigned int packetLength,
 	volatile int64_t *nextBackgroundTaskDeadline,
-	bool isTCPPacket);
+	bool isTCPPacket,
+	bool isTCPRelaySendPacket);
 
 /**
  * Process a frame from a virtual network port (tap)

@@ -74,7 +74,7 @@ static bool _ipv6GetPayload(const uint8_t *frameData,unsigned int frameLen,unsig
 	return false; // overflow == invalid
 }
 
-void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddress &fromAddr,const void *data,unsigned int len,bool isTCPPacket)
+void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddress &fromAddr,const void *data,unsigned int len,bool isTCPPacket,bool isTCPRelaySendPacket)
 {
 	int32_t flowId = ZT_QOS_NO_FLOW;
 	try {
@@ -91,6 +91,7 @@ void Switch::onRemotePacket(void *tPtr,const int64_t localSocket,const InetAddre
 		}
 		
 		path->setTCPPacket(isTCPPacket);
+		path->setTCPRelaySendPacket(isTCPRelaySendPacket);
 		
 		path->received(now);
 
