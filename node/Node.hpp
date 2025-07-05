@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cstdint>
 #include <unordered_set>
 
 #include <map>
@@ -304,6 +305,8 @@ public:
 	bool _enableAllowedPeerKeys;
     
     std::unordered_set<ZeroTier::PubKeyBin, ZeroTier::PubKeyHash> _planetPubKeyBinKeys;
+	
+	std::unordered_set<std::uint32_t> _TCPRelayIPs;
 
 	void *_uPtr; // _uptr (lower case) is reserved in Visual Studio :P
 	ZT_Node_Callbacks _cb;

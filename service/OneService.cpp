@@ -2680,6 +2680,35 @@ public:
             } else {
                 fprintf(stdout, "\n✖ planetPublicKeyStrings: no valid localPublicKeyStrings array in settings\n");
             }
+			
+			if (settings.contains("planetIPTCPRelayIPs")
+				&& settings["planetIPTCPRelayIPs"].is_array())
+			{
+				auto &planetIPTCPRelayIPs = settings["planetIPTCPRelayIPs"];
+
+				for (auto &elem : planetIPTCPRelayIPs) {
+					if (!elem.is_string()) {
+						continue;
+					}
+					
+					InetAddress inetAddress = InetAddress(elem);
+					
+					uint32_t ip4;
+					
+					bool result = inetAddress.getIPv4(ip4);
+					
+					if (result) {
+						// 转换成功
+						_node->_TCPRelayIPs.insert(ip4);
+					} else if (result == 0) {
+						
+					} else {
+						
+					}
+				}
+			} else {
+				fprintf(stdout, "\n✖ planetIPTCPRelayIPs: no planetIPTCPRelayIPs array in settings\n");
+			}
             
 			// Check settings
 			if (defaultBondingPolicyStr.length() && !defaultBondingPolicy && !_node->bondController()->inUse()) {
@@ -3064,8 +3093,18 @@ public:
 		if ((len >= 16) && (reinterpret_cast<const InetAddress*>(from)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
 			_lastDirectReceiveFromGlobal = now;
 		}
-		// 来自udp的数据包
-		const ZT_ResultCode rc = _node->processWirePacket(nullptr,now,reinterpret_cast<int64_t>(sock),reinterpret_cast<const struct sockaddr_storage *>(from),data,len,&_nextBackgroundTaskDeadline,false);
+		
+		bool isTCPPacket = false;
+		uint32_t ip4;
+		bool result = reinterpret_cast<const InetAddress*>(from)->getIPv4(ip4);
+		
+		if (result && _node->_TCPRelayIPs.count(ip4) > 0) {
+			// 来自tcp relay 或者 plant的数据转发
+			isTCPPacket = true;
+		}
+		
+		// 来自udp的数据包(可能经过中继,另外的一端是tcp)
+		const ZT_ResultCode rc = _node->processWirePacket(nullptr,now,reinterpret_cast<int64_t>(sock),reinterpret_cast<const struct sockaddr_storage *>(from),data,len,&_nextBackgroundTaskDeadline,isTCPPacket);
 		if (ZT_ResultCode_isFatal(rc)) {
 			char tmp[256];
 			OSUtils::ztsnprintf(tmp,sizeof(tmp),"fatal error code from processWirePacket: %d",(int)rc);
