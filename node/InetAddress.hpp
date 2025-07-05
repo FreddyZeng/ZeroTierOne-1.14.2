@@ -253,7 +253,7 @@ struct InetAddress : public sockaddr_storage
 	 */
 	char *toIpString(char buf[64]) const;
 
-	bool InetAddress::getIPv4(uint32_t& out_ip);
+	bool getIPv4(uint32_t& out_ip);
 	
 	/**
 	 * @param ipSlashPort IP/port (port is optional, will be 0 if not included)

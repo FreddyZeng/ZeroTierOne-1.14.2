@@ -223,7 +223,7 @@ bool InetAddress::getIPv4(uint32_t& out_ip)
 {
 	// 修正1 & 2: 直接在 this 上通过内部成员安全访问，无拷贝、无封装破坏
 	if (ss_family == AF_INET) {
-		out_ip = &reinterpret_cast<const struct sockaddr_in *>(this)->sin_addr.s_addr;
+		out_ip = reinterpret_cast<const struct sockaddr_in *>(this)->sin_addr.s_addr;
 		return true; // 修正3: 返回 true，明确表示成功
 	} else {
 		return false; // 修正3: 返回 false，明确表示失败
