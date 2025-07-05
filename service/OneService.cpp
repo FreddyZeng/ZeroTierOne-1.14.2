@@ -3105,6 +3105,7 @@ public:
 		
 		if (result && _node->_TCPRelayIPs.count(ip4) > 0) {
 			// 来自tcp relay 或者 plant的数据转发
+			fprintf(stderr, "udp代理,接收到中继的ip: %d", ip4);
 			isTCPPacket = true;
 		}
 		
