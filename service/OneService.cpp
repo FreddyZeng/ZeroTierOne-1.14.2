@@ -2690,8 +2690,15 @@ public:
 					if (!elem.is_string()) {
 						continue;
 					}
-					
-					InetAddress inetAddress = InetAddress(elem);
+					// 2. 获取字符串值
+					std::string ipAddressStr = elem.get<std::string>();
+
+					// 3. 新增检查：确保字符串不是空的
+					if (ipAddressStr.empty()) {
+						continue;
+					}
+
+					InetAddress inetAddress = InetAddress(ipAddressStr.c_str());
 					
 					uint32_t ip4;
 					
@@ -2700,8 +2707,6 @@ public:
 					if (result) {
 						// 转换成功
 						_node->_TCPRelayIPs.insert(ip4);
-					} else if (result == 0) {
-						
 					} else {
 						
 					}

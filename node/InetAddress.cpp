@@ -219,7 +219,7 @@ char *InetAddress::toIpString(char buf[64]) const
 
 
 // 真正健壮、无歧义且高效的版本
-bool InetAddress::getIPv4(uint32_t& out_ip)
+bool InetAddress::getIPv4(uint32_t& out_ip) const
 {
 	// 修正1 & 2: 直接在 this 上通过内部成员安全访问，无拷贝、无封装破坏
 	if (ss_family == AF_INET) {
