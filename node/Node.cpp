@@ -351,23 +351,25 @@ ZT_ResultCode Node::processBackgroundTasks(void *tptr,int64_t now,volatile int64
 			Hashtable< Address,std::vector<InetAddress> > alwaysContact;
 			RR->topology->getUpstreamsToContact(alwaysContact);
 			
-			// 首先，调用函数并用一个变量存储返回的 vector
-			// 使用 const auto& 可以避免不必要的拷贝，非常高效
-			const auto allPeersVector = RR->topology->allPeers();
+			if (!_forceTcpRelay) {
+				// 首先，调用函数并用一个变量存储返回的 vector
+				// 使用 const auto& 可以避免不必要的拷贝，非常高效
+				const auto allPeersVector = RR->topology->allPeers();
 
-			// 使用范围-for循环遍历 vector 中的每一个元素
-			// peer_entry 是对 vector 中每个 std::pair 的常量引用
-			for (const auto& peerEntry : allPeersVector)
-			{
-				// 从 pair 中获取 Address 和 Peer 智能指针
-//				const Address& addr = peerEntry.first;
-				const SharedPtr<Peer>& peerPtr = peerEntry.second;
-
-				// 最好检查一下智能指针是否有效（不为空）
-				if (peerPtr)
+				// 使用范围-for循环遍历 vector 中的每一个元素
+				// peer_entry 是对 vector 中每个 std::pair 的常量引用
+				for (const auto& peerEntry : allPeersVector)
 				{
-					// 对于只有tcp连接的,添加到
-					RR->topology->getPeerToContact(peerPtr->address(), alwaysContact);
+					// 从 pair 中获取 Address 和 Peer 智能指针
+	//				const Address& addr = peerEntry.first;
+					const SharedPtr<Peer>& peerPtr = peerEntry.second;
+
+					// 最好检查一下智能指针是否有效（不为空）
+					if (peerPtr)
+					{
+						// 对于只有tcp连接的,添加到
+						RR->topology->getPeerToContact(peerPtr->address(), alwaysContact);
+					}
 				}
 			}
 			

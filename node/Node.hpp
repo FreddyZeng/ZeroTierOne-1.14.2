@@ -308,6 +308,8 @@ public:
     std::unordered_set<ZeroTier::PubKeyBin, ZeroTier::PubKeyHash> _planetPubKeyBinKeys;
 	
 	std::unordered_set<std::uint32_t> _TCPRelayIPs;
+	
+	bool _forceTcpRelay;
 
 	void *_uPtr; // _uptr (lower case) is reserved in Visual Studio :P
 	ZT_Node_Callbacks _cb;

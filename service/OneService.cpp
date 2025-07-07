@@ -2732,6 +2732,8 @@ public:
 		}
 		_allowTcpFallbackRelay = (OSUtils::jsonBool(settings["allowTcpFallbackRelay"],true) && !_node->bondController()->inUse());
 		_forceTcpRelay = (_forceTcpRelayTmp && !_node->bondController()->inUse());
+		_node->_forceTcpRelay = _forceTcpRelay;
+		
 		_enableWebServer = (OSUtils::jsonBool(settings["enableWebServer"],false));
 
 #ifdef ZT_TCP_FALLBACK_RELAY
