@@ -204,7 +204,8 @@ public:
 				}
 			}
 			
-			if (hasUDPPacket) {
+			if (hasUDPPacket == false) {
+				// 没有活的udp的path的节点,需要持续跟踪
 				for(std::vector<SharedPtr<Path>>::const_iterator p(paths.begin());p!=paths.end();++p) {
 					
 					std::vector<InetAddress> &ips = eps[peer->address()];
