@@ -845,7 +845,7 @@ public:
 	 * destructively with uPnP port mapping behavior in very weird buggy ways.
 	 * It's only used if uPnP/NAT-PMP is enabled in this build.
 	 */
-	unsigned int _ports[3];
+	unsigned int _ports[10];
 	Binder _binder;
 
 	// Time we last received a packet from a global address
@@ -1109,10 +1109,11 @@ public:
 					_ports[1] = _secondaryPort;
 				} else {
 					_ports[1] = _getRandomPort();
-//					_ports[3] = _getRandomPort();
-//					_ports[5] = _getRandomPort();
-//					_ports[7] = _getRandomPort();
-//					_ports[9] = _getRandomPort();
+					
+					_ports[3] = _getRandomPort();
+					_ports[5] = _getRandomPort();
+					_ports[7] = _getRandomPort();
+					_ports[9] = _getRandomPort();
 				}
 			}
 #ifdef ZT_USE_MINIUPNPC
@@ -1126,9 +1127,9 @@ public:
 					_ports[2] = _tertiaryPort = _getRandomPort();
 				}
 				
-//				_ports[4] = _getRandomPort();
-//				_ports[6] = _getRandomPort();
-//				_ports[8] = _getRandomPort();
+				_ports[4] = _getRandomPort();
+				_ports[6] = _getRandomPort();
+				_ports[8] = _getRandomPort();
 
 				if (_ports[2]) {
 					char uniqueName[64];
@@ -1136,23 +1137,23 @@ public:
 					_portMapper = new PortMapper(_ports[2],uniqueName);
 				}
 				
-//				if (_ports[4]) {
-//					char uniqueName[64];
-//					OSUtils::ztsnprintf(uniqueName,sizeof(uniqueName),"ZeroTier/%.10llx@%u",_node->address(),_ports[4]);
-//					_portMapper = new PortMapper(_ports[4],uniqueName);
-//				}
-//				
-//				if (_ports[6]) {
-//					char uniqueName[64];
-//					OSUtils::ztsnprintf(uniqueName,sizeof(uniqueName),"ZeroTier/%.10llx@%u",_node->address(),_ports[6]);
-//					_portMapper = new PortMapper(_ports[6],uniqueName);
-//				}
-//				
-//				if (_ports[8]) {
-//					char uniqueName[64];
-//					OSUtils::ztsnprintf(uniqueName,sizeof(uniqueName),"ZeroTier/%.10llx@%u",_node->address(),_ports[8]);
-//					_portMapper = new PortMapper(_ports[8],uniqueName);
-//				}
+				if (_ports[4]) {
+					char uniqueName[64];
+					OSUtils::ztsnprintf(uniqueName,sizeof(uniqueName),"ZeroTier/%.10llx@%u",_node->address(),_ports[4]);
+					_portMapper = new PortMapper(_ports[4],uniqueName);
+				}
+				
+				if (_ports[6]) {
+					char uniqueName[64];
+					OSUtils::ztsnprintf(uniqueName,sizeof(uniqueName),"ZeroTier/%.10llx@%u",_node->address(),_ports[6]);
+					_portMapper = new PortMapper(_ports[6],uniqueName);
+				}
+				
+				if (_ports[8]) {
+					char uniqueName[64];
+					OSUtils::ztsnprintf(uniqueName,sizeof(uniqueName),"ZeroTier/%.10llx@%u",_node->address(),_ports[8]);
+					_portMapper = new PortMapper(_ports[8],uniqueName);
+				}
 			}
 #endif
 
@@ -1279,9 +1280,9 @@ public:
 						}
 					}
 
-					unsigned int p[3];
+					unsigned int p[10];
 					unsigned int pc = 0;
-					for(int i=0;i<3;++i) {
+					for(int i=0;i<10;++i) {
 						if (_ports[i])
 							p[pc++] = _ports[i];
 					}
