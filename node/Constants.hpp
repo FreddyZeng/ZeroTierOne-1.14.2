@@ -509,7 +509,7 @@
  * Timeout for overall peer activity (measured from last receive)
  */
 #ifndef ZT_SDK
-#define ZT_PEER_ACTIVITY_TIMEOUT 500000
+#define ZT_PEER_ACTIVITY_TIMEOUT 30000
 #else
 #define ZT_PEER_ACTIVITY_TIMEOUT 30000
 #endif
