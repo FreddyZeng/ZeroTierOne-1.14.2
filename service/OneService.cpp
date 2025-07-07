@@ -3796,8 +3796,8 @@ public:
 
 		const int64_t now = OSUtils::now();
 		bool isPathAlive = path->alive(now);
-		bool isTCPPath = path->isTCPPacket();
-		bool isTCPRelaySendPacket = path->isTCPRelaySendPacket();
+		bool isTCPPath = path->isTCPPacket(); // udp接收方向的tcp, 经过 relay或者planet的数据包
+		bool isTCPRelaySendPacket = path->isTCPRelaySendPacket(); // tcp发送的方向
 		bool needsHeartbeat = path->needsHeartbeat(now);
 		
 		bool forceSend = false;
@@ -3851,7 +3851,7 @@ public:
 				needRestartTCPFallbackTunnel = true;
 			}
 			
-		if(_allowTcpFallbackRelay && (isTCPPath || forceUpLinkPacket)) {
+		if(_allowTcpFallbackRelay && isTCPRelaySendPacket) {
 			if (addr->ss_family == AF_INET) {
 				// TCP fallback tunnel support, currently IPv4 only
 				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
