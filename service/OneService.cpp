@@ -3797,6 +3797,7 @@ public:
 		const int64_t now = OSUtils::now();
 		bool isPathAlive = path->alive(now);
 		bool isTCPPath = path->isTCPPacket();
+		bool isTCPRelaySendPacket = path->isTCPRelaySendPacket();
 		bool needsHeartbeat = path->needsHeartbeat(now);
 		
 		bool forceSend = false;
@@ -3823,7 +3824,6 @@ public:
 			isForceTCP = true;
 		}
 		
-		
 		bool result = -1;
 		
 		if (!_forceTcpRelay && !isForceTCP) {
@@ -3845,6 +3845,12 @@ public:
 
 			
 #ifdef ZT_TCP_FALLBACK_RELAY
+			
+			bool needRestartTCPFallbackTunnel = false;
+			if (_tcpFallbackTunnel && (now - _lastSendToGlobalV4) < 5000 && (now - _tcpFallbackTunnel->lastReceive) > 15000) {
+				needRestartTCPFallbackTunnel = true;
+			}
+			
 		if(_allowTcpFallbackRelay && (isTCPPath || forceUpLinkPacket)) {
 			if (addr->ss_family == AF_INET) {
 				// TCP fallback tunnel support, currently IPv4 only
@@ -3853,7 +3859,7 @@ public:
 					// IP address in ZT_TCP_FALLBACK_AFTER milliseconds. If we do start getting
 					// valid direct traffic we'll stop using it and close the socket after a while.
 //					const int64_t now = OSUtils::now();
-					if (_tcpFallbackTunnel) {
+					if (_tcpFallbackTunnel && !needRestartTCPFallbackTunnel) {
 						bool flushNow = false;
 						{
 							Mutex::Lock _l(_tcpFallbackTunnel->writeq_m);
@@ -3917,6 +3923,12 @@ public:
 			bool returnResult = -1;
 			
 #ifdef ZT_TCP_FALLBACK_RELAY
+			
+		bool needRestartTCPFallbackTunnel = false;
+		if (_tcpFallbackTunnel && (now - _lastSendToGlobalV4) < 5000 && (now - _tcpFallbackTunnel->lastReceive) > 15000) {
+			needRestartTCPFallbackTunnel = true;
+		}
+			
 		if(_allowTcpFallbackRelay) {
 			if (addr->ss_family == AF_INET) {
 				// TCP fallback tunnel support, currently IPv4 only
@@ -3925,7 +3937,7 @@ public:
 					// IP address in ZT_TCP_FALLBACK_AFTER milliseconds. If we do start getting
 					// valid direct traffic we'll stop using it and close the socket after a while.
 //					const int64_t now = OSUtils::now();
-					if (_tcpFallbackTunnel) {
+					if (_tcpFallbackTunnel && !needRestartTCPFallbackTunnel) {
 						bool flushNow = false;
 						{
 							Mutex::Lock _l(_tcpFallbackTunnel->writeq_m);
