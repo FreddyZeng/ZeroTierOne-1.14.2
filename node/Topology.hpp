@@ -85,7 +85,7 @@ public:
 	 *
 	 * @param zta ZeroTier address
 	 */
-	inline SharedPtr<Peer> getPeerNoCache(const Address &zta)
+	inline SharedPtr<Peer> getPeerNoCache(const Address &zta) const
 	{
 		Mutex::Lock _l(_peers_m);
 		const SharedPtr<Peer> *const ap = _peers.get(zta);
@@ -185,6 +185,32 @@ public:
 		}
 		for(std::vector< std::pair<uint64_t,Address> >::const_iterator m(_moonSeeds.begin());m!=_moonSeeds.end();++m) {
 			eps[m->second];
+		}
+	}
+	
+	inline void getPeerToContact(const Address &zta, Hashtable< Address,std::vector<InetAddress> > &eps) const
+	{
+		SharedPtr<Peer> peer = getPeerNoCache(zta);
+		
+		if (peer) {
+			uint64_t now = OSUtils::now();
+			
+			std::vector< SharedPtr<Path> > paths = peer->paths(now);
+			
+			bool hasUDPPacket = false;
+			for(std::vector<SharedPtr<Path>>::const_iterator p(paths.begin());p!=paths.end();++p) {
+				if ((*p)->isTCPPacket() == false && (*p)->alive(now)) {
+					hasUDPPacket = true;
+				}
+			}
+			
+			if (hasUDPPacket) {
+				for(std::vector<SharedPtr<Path>>::const_iterator p(paths.begin());p!=paths.end();++p) {
+					
+					std::vector<InetAddress> &ips = eps[peer->address()];
+					ips.push_back((*p)->address());
+				}
+			}
 		}
 	}
 
