@@ -3848,7 +3848,7 @@ public:
 #ifdef ZT_TCP_FALLBACK_RELAY
 			
 			bool needRestartTCPFallbackTunnel = false;
-			if (_tcpFallbackTunnel && (now - _lastSendToGlobalV4) < 5000 && (now - _tcpFallbackTunnel->lastReceive) > 15000) {
+			if (_tcpFallbackTunnel && (now - _lastSendToGlobalV4) < 5000 && (now - _tcpFallbackTunnel->lastReceive) > 35000) {
 				needRestartTCPFallbackTunnel = true;
 			}
 			
@@ -3926,7 +3926,7 @@ public:
 #ifdef ZT_TCP_FALLBACK_RELAY
 			
 		bool needRestartTCPFallbackTunnel = false;
-		if (_tcpFallbackTunnel && (now - _lastSendToGlobalV4) < 5000 && (now - _tcpFallbackTunnel->lastReceive) > 15000) {
+		if (_tcpFallbackTunnel && (now - _lastSendToGlobalV4) < 5000 && (now - _tcpFallbackTunnel->lastReceive) > 35000) {
 			needRestartTCPFallbackTunnel = true;
 		}
 			
