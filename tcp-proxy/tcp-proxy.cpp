@@ -220,7 +220,14 @@ struct TcpProxyService
 			if (c.tcpReadPtr >= 5) {
 				unsigned long mlen = ( ((((unsigned long)c.tcpReadBuf[3]) & 0xff) << 8) | (((unsigned long)c.tcpReadBuf[4]) & 0xff) );
 				if (c.tcpReadPtr >= (mlen + 5)) {
-					if (mlen == 4 || mlen == 6) {
+					if (mlen == 6) {
+						
+						if (memcmp(c.tcpReadBuf + 9, "\x91\x5E", 2) != 0) {
+							// 不是合法的连接
+							phy->close(sock);
+							return;
+						}
+						
 						// Right now just sending this means the client is 'new enough' for the IP header
 						c.newVersion = true;
 						printf("<< TCP %.16llx HELLO\n",(unsigned long long)*uptr);
