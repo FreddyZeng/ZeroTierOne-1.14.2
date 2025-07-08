@@ -443,7 +443,7 @@ std::vector<SharedPtr<Path>> Peer::getAppropriatePathList(int64_t now, bool incl
 	for(unsigned int i = 0; i < ZT_MAX_PEER_NETWORK_PATHS; ++i) {
 		if (_paths[i].p) {
 			// 路径必须是活跃的(或允许包含过期的)，并且不能是TCP路径
-			if ((includeExpired || ((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) && !_paths[i].p->isTCPPacket()) {
+			if (includeExpired || ((now - _paths[i].lr) < ZT_PEER_PATH_EXPIRATION)) {
 				// 使用与原始代码完全相同的逻辑计算质量
 				const long q = _paths[i].p->quality(now) / _paths[i].priority;
 				// 将路径指针和计算出的质量一起添加到临时列表中
