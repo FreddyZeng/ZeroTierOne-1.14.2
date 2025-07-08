@@ -3797,27 +3797,27 @@ public:
 		const SharedPtr<Path> path(_node->RR->topology->getPath(localSocket,inetAddrPtr));
 
 		const int64_t now = OSUtils::now();
-		bool isPathAlive = path->alive(now);
-		bool isTCPPath = path->isTCPPacket(); // udp接收方向的tcp, 经过 relay或者planet的数据包
+//		bool isPathAlive = path->alive(now);
+//		bool isTCPPath = path->isTCPPacket(); // udp接收方向的tcp, 经过 relay或者planet的数据包
 		bool isTCPRelaySendPacket = path->isTCPRelaySendPacket(); // tcp发送的方向
-		bool needsHeartbeat = path->needsHeartbeat(now);
+//		bool needsHeartbeat = path->needsHeartbeat(now);
 		
-		bool forceSend = false;
+//		bool forceSend = false;
+//		
+//		if (verb == Packet::VERB_HELLO ||
+//			verb == Packet::VERB_ERROR ||
+//			verb == Packet::VERB_WHOIS ||
+//			verb == Packet::VERB_RENDEZVOUS ||
+//			verb == Packet::VERB_PUSH_DIRECT_PATHS ||
+//			verb == Packet::VERB_PATH_NEGOTIATION_REQUEST ||
+//			verb == Packet::VERB_NETWORK_CONFIG_REQUEST ||
+//			verb == Packet::VERB_NETWORK_CONFIG ||
+//			verb == Packet::VERB_NETWORK_CREDENTIALS) {
+//			
+//			forceSend = true;
+//		}
 		
-		if (verb == Packet::VERB_HELLO ||
-			verb == Packet::VERB_ERROR ||
-			verb == Packet::VERB_WHOIS ||
-			verb == Packet::VERB_RENDEZVOUS ||
-			verb == Packet::VERB_PUSH_DIRECT_PATHS ||
-			verb == Packet::VERB_PATH_NEGOTIATION_REQUEST ||
-			verb == Packet::VERB_NETWORK_CONFIG_REQUEST ||
-			verb == Packet::VERB_NETWORK_CONFIG ||
-			verb == Packet::VERB_NETWORK_CREDENTIALS) {
-			
-			forceSend = true;
-		}
-		
-		bool forceUpLinkPacket = ((needsHeartbeat || !isPathAlive) && forceSend);
+//		bool forceUpLinkPacket = ((needsHeartbeat || !isPathAlive) && forceSend);
 		
 		
 		bool isForceTCP = false;
@@ -3828,7 +3828,7 @@ public:
 		
 		bool result = -1;
 		
-		if (!_forceTcpRelay && !isForceTCP) {
+		if (!_forceTcpRelay && !isForceTCP && !isTCPRelaySendPacket) {
 			// Even when relaying we still send via UDP. This way if UDP starts
 			// working we can instantly "fail forward" to it and stop using TCP
 			// proxy fallback, which is slow.
@@ -3853,7 +3853,7 @@ public:
 				needRestartTCPFallbackTunnel = true;
 			}
 			
-		if(_allowTcpFallbackRelay && isTCPRelaySendPacket) {
+		if(_allowTcpFallbackRelay && result == -1) {
 			if (addr->ss_family == AF_INET) {
 				// TCP fallback tunnel support, currently IPv4 only
 				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
