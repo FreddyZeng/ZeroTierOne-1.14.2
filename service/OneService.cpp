@@ -3853,7 +3853,7 @@ public:
 				needRestartTCPFallbackTunnel = true;
 			}
 			
-		if(_allowTcpFallbackRelay && result == -1) {
+		if(_allowTcpFallbackRelay && (result == -1 || needRestartTCPFallbackTunnel)) {
 			if (addr->ss_family == AF_INET) {
 				// TCP fallback tunnel support, currently IPv4 only
 				if ((len >= 16)&&(reinterpret_cast<const InetAddress *>(addr)->ipScope() == InetAddress::IP_SCOPE_GLOBAL)) {
