@@ -1239,7 +1239,7 @@ public:
 
 				// Attempt to detect sleep/wake events by detecting delay overruns
 				bool restarted = false;
-				if ((now > clockShouldBe)&&((now - clockShouldBe) > 5000)) {
+				if ((now > clockShouldBe)&&((now - clockShouldBe) > 10000)) {
 					_lastRestart = now;
 					restarted = true;
 				}
