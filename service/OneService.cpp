@@ -857,6 +857,8 @@ public:
 
 	// Last potential sleep/wake event
 	uint64_t _lastRestart;
+	
+	uint64_t _emptySurfaceAddrSince;
 
 	// Deadline for the next background task service function
 	volatile int64_t _nextBackgroundTaskDeadline;
@@ -923,6 +925,7 @@ public:
 		,_lastSendToGlobalV4(0)
 #endif
 		,_lastRestart(0)
+		,_emptySurfaceAddrSince(0)
 		,_nextBackgroundTaskDeadline(0)
 		,_tcpFallbackTunnel((TcpConnection *)0)
 		,_termReason(ONE_STILL_RUNNING)
@@ -1213,6 +1216,7 @@ public:
 			_nextBackgroundTaskDeadline = 0;
 			int64_t clockShouldBe = OSUtils::now();
 			_lastRestart = clockShouldBe;
+			_emptySurfaceAddrSince = clockShouldBe;
 			int64_t lastTapMulticastGroupCheck = 0;
 			int64_t lastBindRefresh = 0;
 			int64_t lastUpdateCheck = clockShouldBe;
@@ -1238,6 +1242,19 @@ public:
 				if ((now > clockShouldBe)&&((now - clockShouldBe) > 5000)) {
 					_lastRestart = now;
 					restarted = true;
+				}
+				
+				std::vector<InetAddress> surfaceAddrs = _node->SurfaceAddresses();
+				if (surfaceAddrs.empty()) {
+					// 数组为空的处理逻辑
+					if ((now - _emptySurfaceAddrSince) >= 60000) {
+						// 如果公网ip为空, 并且超时 60秒后, 就重启
+						_lastRestart = now;
+						restarted = true;
+					}
+				} else {
+					// 数组非空的处理逻辑
+					_emptySurfaceAddrSince = now;
 				}
 
 				// Check for updates (if enabled)
