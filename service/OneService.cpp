@@ -1246,15 +1246,29 @@ public:
 				
 				std::vector<InetAddress> surfaceAddrs = _node->SurfaceAddresses();
 				if (surfaceAddrs.empty()) {
-					// 数组为空的处理逻辑
-					if ((now - _emptySurfaceAddrSince) >= 60000) {
-						// 如果公网ip为空, 并且超时 60秒后, 就重启
+					// 数组为空，进入计时逻辑
+
+					// 1. 当它为空的时候记录时间
+					// 检查 _emptySurfaceAddrSince 是否为 0 (是否是刚变为空，计时器还未启动)
+					if (_emptySurfaceAddrSince == 0) {
+						// 如果是，就记录当前时间，启动计时器
+						_emptySurfaceAddrSince = now;
+					}
+
+					// 2. 如果一直为空, 并且持续了60秒, 那么就重启
+					// 这里的 _emptySurfaceAddrSince > 0 确保了计时器已经启动
+					if (_emptySurfaceAddrSince > 0 && (now - _emptySurfaceAddrSince) >= 60000) {
 						_lastRestart = now;
 						restarted = true;
+						_emptySurfaceAddrSince = 0; // 重启后重置计时器
 					}
+
 				} else {
-					// 数组非空的处理逻辑
-					_emptySurfaceAddrSince = now;
+					// 数组非空，一切正常
+
+					// 3. 不为空就删除这个时间
+					// 将计时器重置为 0，表示计时结束/删除时间记录
+					_emptySurfaceAddrSince = 0;
 				}
 
 				// Check for updates (if enabled)
